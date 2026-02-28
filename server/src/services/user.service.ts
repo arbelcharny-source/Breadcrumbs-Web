@@ -1,6 +1,9 @@
+import { OAuth2Client } from 'google-auth-library';
 import User, { IUser } from '../models/user.js';
 import { AppError } from '../middleware/error.middleware.js';
 import { generateTokenPair, TokenPair, JWTPayload, verifyRefreshToken } from '../utils/jwt.js';
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export interface UserResponse {
   _id: string;
@@ -9,6 +12,7 @@ export interface UserResponse {
   fullName: string;
   createdAt?: Date;
   updatedAt?: Date;
+  profileUrl?: string;
 }
 
 export interface UserRegistrationResult {
@@ -59,6 +63,7 @@ export class UserService {
       fullName: user.fullName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      profileUrl: user.profileUrl
     };
 
     return {
@@ -73,6 +78,10 @@ export class UserService {
 
     if (!user) {
       throw new AppError('Invalid username or password', 401);
+    }
+
+    if (!user.password) {
+      throw new AppError('Please login with Google', 400);
     }
 
     const isPasswordValid = await user.comparePassword(password);
@@ -100,6 +109,84 @@ export class UserService {
       fullName: user.fullName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      profileUrl: user.profileUrl
+    };
+
+    return {
+      user: userResponse,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    };
+  }
+
+  async googleLogin(credential: string): Promise<LoginResult> {
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.email) {
+      throw new AppError('Invalid Google Token', 400);
+    }
+
+    const { email, name, picture, sub } = payload;
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      let baseUsername = email.split('@')[0];
+      let username = `${baseUsername}_${sub.substring(0, 5)}`;
+      
+      let isUnique = false;
+      while (!isUnique) {
+        const existing = await User.findOne({ username });
+        if (existing) {
+          username = `${baseUsername}_${Math.floor(Math.random() * 10000)}`;
+        } else {
+          isUnique = true;
+        }
+      }
+
+      user = await User.create({
+        email,
+        username,
+        fullName: name || username,
+        googleId: sub,
+        profileUrl: picture
+      });
+    } else {
+      let updated = false;
+      if (!user.googleId) {
+        user.googleId = sub;
+        updated = true;
+      }
+      if (!user.profileUrl && picture) {
+        user.profileUrl = picture;
+        updated = true;
+      }
+      if (updated) await user.save();
+    }
+
+    const tokenPayload: JWTPayload = {
+      userId: user._id.toString(),
+      username: user.username,
+      email: user.email,
+    };
+
+    const tokens = generateTokenPair(tokenPayload);
+
+    await User.findByIdAndUpdate(user._id, {
+      $push: { refreshTokens: tokens.refreshToken }
+    });
+
+    const userResponse: UserResponse = {
+      _id: user._id.toString(),
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      profileUrl: user.profileUrl
     };
 
     return {
@@ -170,6 +257,7 @@ export class UserService {
       fullName: user.fullName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      profileUrl: user.profileUrl
     };
   }
 
@@ -183,6 +271,7 @@ export class UserService {
       fullName: user.fullName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      profileUrl: user.profileUrl
     }));
   }
 
@@ -218,6 +307,7 @@ export class UserService {
       fullName: user.fullName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      profileUrl: user.profileUrl
     };
   }
 
