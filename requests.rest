@@ -1,0 +1,148 @@
+@baseUrl = http://localhost:3000
+
+@createdUserId = 69371e66e2172d8a5f2f1141
+@createdPostId = 6937191a04b5203723574511
+@createdCommentId = 696244063fa8e6f06650525a
+@notCreatedUserId = 123
+@notCreatedPostId = 123
+@notCreatedCommentId = 123
+
+# USERS API
+
+### Register User (Create User)
+# @name register
+POST {{baseUrl}}/users/register
+Content-Type: application/json
+
+{
+    "username": "arbelcharny",
+    "fullName": "Arbel Charny"
+}
+
+### Check Existing User (Create User)
+# @name register
+POST {{baseUrl}}/users/register
+Content-Type: application/json
+
+{
+    "username": "johndoe",
+    "fullName": "John Doe"
+}
+
+
+# POSTS API
+
+### Create a New Post
+# @name createPost
+POST {{baseUrl}}/posts
+Content-Type: application/json
+
+{
+    "title": "My First Post",
+    "content": "This is the content of the post.",
+    "ownerId": "{{createdUserId}}", 
+    "imageAttachmentUrl": "http://example.com/image.png"
+}
+
+### Get All Posts
+GET {{baseUrl}}/posts
+
+### Get Post by ID
+GET {{baseUrl}}/posts/{{createdPostId}}
+
+### Check Invalid Post ID format - Get Post by ID
+GET {{baseUrl}}/posts/{{notCreatedPostId}}
+
+### Get Posts by Sender (Owner ID)
+GET {{baseUrl}}/posts/sender/{{createdUserId}}
+
+### Check Invalid User ID format - Get Posts by Sender
+GET {{baseUrl}}/posts/sender/{{notCreatedUserId}}
+
+### Update Post
+PUT {{baseUrl}}/posts/{{createdPostId}}
+Content-Type: application/json
+
+{
+    "content": "This is the UPDATED content."
+}
+
+### Check Invalid Post ID format - Update Post
+PUT {{baseUrl}}/posts/{{notCreatedPostId}}
+Content-Type: application/json
+
+{
+    "content": "This is the UPDATED content."
+}
+
+# COMMENTS API
+
+### Create a New Comment
+# @name createComment
+POST {{baseUrl}}/comments
+Content-Type: application/json
+
+{
+    "content": "This is a great post!",
+    "postId": "{{createdPostId}}",
+    "ownerId": "{{createdUserId}}"
+}
+
+### Check Invalid Post ID format - Create a New Comment
+# @name createComment
+POST {{baseUrl}}/comments
+Content-Type: application/json
+
+{
+    "content": "This is a great post!",
+    "postId": "{{notCreatedPostId}}",
+    "ownerId": "{{createdUserId}}"
+}
+
+### Check Invalid User ID format - Create a New Comment
+# @name createComment
+POST {{baseUrl}}/comments
+Content-Type: application/json
+
+{
+    "content": "This is a great post!",
+    "postId": "{{createdPostId}}",
+    "ownerId": "{{notCreatedUserId}}"
+}
+
+### Get All Comments
+GET {{baseUrl}}/comments
+
+### Get Comment by ID
+GET {{baseUrl}}/comments/{{createdCommentId}}
+
+### Check Check Invalid Comment ID format - Get Comment by ID
+GET {{baseUrl}}/comments/{{notCreatedCommentId}}
+
+### Get Comments by Post ID
+GET {{baseUrl}}/comments/post/{{createdPostId}}
+
+### Check Invalid Post ID format - Get Comments by Post ID
+GET {{baseUrl}}/comments/post/{{notCreatedPostId}}
+
+### Update Comment
+PUT {{baseUrl}}/comments/{{createdCommentId}}
+Content-Type: application/json
+
+{
+    "content": "Updated comment text"
+}
+
+### Check Invalid Comment ID format - Update Comment
+PUT {{baseUrl}}/comments/{{notCreatedCommentId}}
+Content-Type: application/json
+
+{
+    "content": "Updated comment text"
+}
+
+### Delete Comment
+DELETE {{baseUrl}}/comments/{{createdCommentId}}
+
+### Check Invalid Comment ID format - Delete Comment
+DELETE {{baseUrl}}/comments/{{notCreatedCommentId}}
