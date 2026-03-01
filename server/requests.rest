@@ -16,7 +16,19 @@ Content-Type: application/json
 
 {
     "username": "arbelcharny",
-    "fullName": "Arbel Charny"
+    "fullName": "Arbel Charny",
+    "email": "arbel@example.com",
+    "password": "password123"
+}
+
+### Login User
+# @name login
+POST {{baseUrl}}/users/login
+Content-Type: application/json
+
+{
+    "username": "arbelcharny",
+    "password": "password123"
 }
 
 ### Check Existing User (Create User)
