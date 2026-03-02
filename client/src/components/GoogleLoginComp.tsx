@@ -1,19 +1,26 @@
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { googleSignin } from "../services/user-service";
+import { useUser } from "../context/UserContext";
 
 const GoogleLoginComp = () => {
-  
+  const { login } = useUser();
+
   const handleSuccess = async (credentialResponse: CredentialResponse) => {
     try {
       const { credential } = credentialResponse;
-      
+
       if (credential) {
-        console.log("Google Token received:", credential);
-        
         const serverResponse = await googleSignin(credential);
-        console.log("Server login success:", serverResponse);
-        
-        alert("התחברת בהצלחה! בדוק את הקונסול לפרטים.");
+
+        const userData = serverResponse.data.user;
+        const token = serverResponse.data.accessToken;
+
+        const fixedUser = { 
+            ...userData, 
+            imgUrl: userData.profileUrl 
+        };
+
+        login(fixedUser, token);
       }
     } catch (error) {
       console.error("Login process failed:", error);
@@ -29,7 +36,6 @@ const GoogleLoginComp = () => {
       <GoogleLogin
         onSuccess={handleSuccess}
         onError={handleError}
-        useOneTap
       />
     </div>
   );

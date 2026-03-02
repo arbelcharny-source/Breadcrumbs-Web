@@ -1,20 +1,22 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-    baseURL: "http://localhost:5173", 
+    baseURL: "http://localhost:3000",
     headers: {
         "Content-Type": "application/json",
     },
 });
 
 interface AuthResponse {
-    accessToken: string;
-    refreshToken: string;
-    user: {
-        _id: string;
-        username: string;
-        email: string;
-        imgUrl?: string;
+    data: {
+        accessToken: string;
+        refreshToken: string;
+        user: {
+            _id: string;
+            username: string;
+            email: string;
+            profileUrl?: string;
+        };
     };
 }
 
