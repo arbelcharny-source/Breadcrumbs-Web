@@ -10,7 +10,7 @@ interface User {
 interface UserContextType {
     user: User | null;
     token: string | null;
-    login: (userData: User, token: string) => void;
+    login: (userData: User, accessToken: string, refreshToken: string) => void; 
     logout: () => void;
 }
 
@@ -36,12 +36,14 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
-    const login = (userData: User, authToken: string) => {
-        setUser(userData);
-        setToken(authToken);
-        localStorage.setItem("user", JSON.stringify(userData));
-        localStorage.setItem("token", authToken);
-    };
+const login = (userData: User, accessToken: string, refreshToken: string) => {
+    setUser(userData);
+    setToken(accessToken);
+
+    localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+};
 
     const logout = () => {
         setUser(null);
