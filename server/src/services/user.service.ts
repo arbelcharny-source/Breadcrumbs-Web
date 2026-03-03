@@ -1,5 +1,5 @@
 import { OAuth2Client } from 'google-auth-library';
-import User, { IUser } from '../models/user.js';
+import User from '../models/user.js';
 import { AppError } from '../middleware/error.middleware.js';
 import { generateTokenPair, TokenPair, JWTPayload, verifyRefreshToken } from '../utils/jwt.js';
 
@@ -73,8 +73,10 @@ export class UserService {
     };
   }
 
-  async login(username: string, password: string): Promise<LoginResult> {
-    const user = await User.findOne({ username }).select('+password +refreshTokens');
+  async login(identifier: string, password: string): Promise<LoginResult> {
+    const user = await User.findOne({
+      $or: [{ username: identifier }, { email: identifier }]
+    }).select('+password +refreshTokens');
 
     if (!user) {
       throw new AppError('Invalid username or password', 401);
@@ -119,12 +121,14 @@ export class UserService {
     };
   }
 
-  async googleLogin(credential: string): Promise<LoginResult> {
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
+  async googleLogin(accessToken: string): Promise<LoginResult> {
+    client.setCredentials({ access_token: accessToken });
+
+    const userInfo = await client.request({
+      url: 'https://www.googleapis.com/oauth2/v3/userinfo'
     });
-    const payload = ticket.getPayload();
+
+    const payload: any = userInfo.data;
 
     if (!payload || !payload.email) {
       throw new AppError('Invalid Google Token', 400);
