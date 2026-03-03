@@ -1,43 +1,45 @@
-import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
+import { useGoogleLogin } from "@react-oauth/google";
 import { googleSignin } from "../services/user-service";
 import { useUser } from "../context/UserContext";
+import { useNavigate } from "react-router-dom";
 
 const GoogleLoginComp = () => {
   const { login } = useUser();
+  const navigate = useNavigate();
 
-  const handleSuccess = async (credentialResponse: CredentialResponse) => {
-    try {
-      const { credential } = credentialResponse;
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const response = await googleSignin(tokenResponse.access_token);
+        const { user, accessToken, refreshToken } = response.data;
 
-      if (credential) {
-        const serverResponse = await googleSignin(credential);
-
-        const userData = serverResponse.data.user;
-        const token = serverResponse.data.accessToken;
-
-        const fixedUser = { 
-            ...userData, 
-            imgUrl: userData.profileUrl 
-        };
-
-        login(fixedUser, token);
+        login(
+          { ...user, imgUrl: user.profileUrl }, 
+          accessToken, 
+          refreshToken
+        );
+        
+        navigate("/profile");
+      } catch (error) {
+        console.error("Login process failed:", error);
       }
-    } catch (error) {
-      console.error("Login process failed:", error);
-    }
-  };
-
-  const handleError = () => {
-    console.error("Google Login Failed");
-  };
+    },
+    onError: () => console.error("Google Login Failed"),
+  });
 
   return (
-    <div style={{ margin: "20px" }}>
-      <GoogleLogin
-        onSuccess={handleSuccess}
-        onError={handleError}
+    <button
+      type="button"
+      onClick={() => handleGoogleLogin()}
+      className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 text-gray-700 py-4 rounded-full font-bold hover:bg-gray-50 transform hover:scale-[1.01] active:scale-[0.99] transition-all shadow-sm"
+    >
+      <img 
+        src="https://www.google.com/favicon.ico" 
+        alt="google" 
+        className="w-5 h-5"
       />
-    </div>
+      <span className="text-base tracking-tight">Continue with Google</span>
+    </button>
   );
 };
 
