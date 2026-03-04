@@ -10,6 +10,9 @@ interface AuthFormProps {
   toggleAuth: () => void;
 }
 
+const MIN_USERNAME_LENGHT = 2
+const MIN_PASSWORD_LENGHT = 6
+
 const AuthForm = ({ isLogin, toggleAuth }: AuthFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ username: '', email: '', fullName: '', password: '' });
@@ -18,11 +21,13 @@ const AuthForm = ({ isLogin, toggleAuth }: AuthFormProps) => {
 
   const validate = () => {
     if (!isLogin) {
-      if (!formData.username || formData.username.length < 2) return "Username too short";
+      if (!formData.username || formData.username.length < MIN_USERNAME_LENGHT) return "Username too short";
       if (!formData.fullName) return "Full name is required";
     }
+
     if (!/\S+@\S+\.\S+/.test(formData.email)) return "Invalid email address";
-    if (formData.password.length < 6) return "Password must be at least 6 characters";
+    if (formData.password.length < MIN_PASSWORD_LENGHT) return "Password must be at least 6 characters";
+    
     return "";
   };
 
