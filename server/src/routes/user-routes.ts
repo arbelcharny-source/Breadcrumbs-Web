@@ -1,5 +1,5 @@
 import express from "express";
-import { createUser, login, refreshToken, logout, logoutAll, getUserById, getAllUsers, updateUser, deleteUser } from "../controllers/user-controller.js";
+import { createUser, login, googleLogin, refreshToken, logout, logoutAll, getUserById, getAllUsers, updateUser, deleteUser } from "../controllers/user-controller.js";
 import { validateUserRegistration, validateLogin, validateRefreshToken, validateUserUpdate } from "../middleware/validation.middleware.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { validateObjectId } from "../utils/validation.js";
@@ -8,10 +8,16 @@ const router = express.Router();
 
 /**
  * @swagger
+ * tags:
+ *   - name: Users
+ *     description: User management and authentication
+ */
+
+/**
+ * @swagger
  * /users/register:
  *   post:
  *     summary: Register a new user
- *     description: Creates a new user account and returns JWT tokens (access and refresh)
  *     tags:
  *       - Users
  *     requestBody:
@@ -25,16 +31,8 @@ const router = express.Router();
  *         description: User successfully registered
  *       400:
  *         description: Invalid input data
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  *       409:
  *         description: Username or email already exists
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.post("/register", validateUserRegistration, createUser);
 
@@ -43,7 +41,6 @@ router.post("/register", validateUserRegistration, createUser);
  * /users/login:
  *   post:
  *     summary: Login user
- *     description: Authenticates a user and returns JWT tokens (access and refresh)
  *     tags:
  *       - Users
  *     requestBody:
@@ -57,19 +54,46 @@ router.post("/register", validateUserRegistration, createUser);
  *         description: Login successful
  *       401:
  *         description: Invalid credentials
+ */
+router.post("/login", validateLogin, login);
+
+/**
+ * @swagger
+ * /users/google:
+ *   post:
+ *     summary: Google Login
+ *     description: Authenticates a user via Google OAuth2
+ *     tags:
+ *       - Users
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - credential
+ *             properties:
+ *               credential:
+ *                 type: string
+ *                 description: The Google JWT credential (ID Token)
+ *     responses:
+ *       200:
+ *         description: Login successful
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               $ref: '#/components/schemas/TokenPair'
+ *       400:
+ *         description: Invalid Google Token
  */
-router.post("/login", validateLogin, login);
+router.post("/google", googleLogin);
 
 /**
  * @swagger
  * /users/refresh:
  *   post:
  *     summary: Refresh access token
- *     description: Generates a new access token using a valid refresh token
  *     tags:
  *       - Users
  *     requestBody:
@@ -81,16 +105,8 @@ router.post("/login", validateLogin, login);
  *     responses:
  *       200:
  *         description: Token refreshed successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/TokenPair'
  *       401:
  *         description: Invalid or expired refresh token
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.post("/refresh", validateRefreshToken, refreshToken);
 
@@ -99,7 +115,6 @@ router.post("/refresh", validateRefreshToken, refreshToken);
  * /users/logout:
  *   post:
  *     summary: Logout user
- *     description: Invalidates the provided refresh token
  *     tags:
  *       - Users
  *     security:
@@ -113,24 +128,8 @@ router.post("/refresh", validateRefreshToken, refreshToken);
  *     responses:
  *       200:
  *         description: Logout successful
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: object
- *                   properties:
- *                     message:
- *                       type: string
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.post("/logout", authenticate, validateRefreshToken, logout);
 
@@ -139,7 +138,6 @@ router.post("/logout", authenticate, validateRefreshToken, logout);
  * /users/logout-all:
  *   post:
  *     summary: Logout from all devices
- *     description: Invalidates all refresh tokens for the user
  *     tags:
  *       - Users
  *     security:
@@ -147,24 +145,8 @@ router.post("/logout", authenticate, validateRefreshToken, logout);
  *     responses:
  *       200:
  *         description: Logged out from all devices successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: object
- *                   properties:
- *                     message:
- *                       type: string
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.post("/logout-all", authenticate, logoutAll);
 
@@ -173,24 +155,11 @@ router.post("/logout-all", authenticate, logoutAll);
  * /users:
  *   get:
  *     summary: Get all users
- *     description: Retrieves a list of all users
  *     tags:
  *       - Users
  *     responses:
  *       200:
  *         description: List of users retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/User'
  */
 router.get("/", getAllUsers);
 
@@ -199,7 +168,6 @@ router.get("/", getAllUsers);
  * /users/{id}:
  *   get:
  *     summary: Get user by ID
- *     description: Retrieves a specific user by their ID
  *     tags:
  *       - Users
  *     parameters:
@@ -208,32 +176,11 @@ router.get("/", getAllUsers);
  *         required: true
  *         schema:
  *           type: string
- *         description: User ID
  *     responses:
  *       200:
  *         description: User retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/User'
- *       400:
- *         description: Invalid user ID format
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: User not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.get("/:id", validateObjectId("id"), getUserById);
 
@@ -242,7 +189,6 @@ router.get("/:id", validateObjectId("id"), getUserById);
  * /users/{id}:
  *   put:
  *     summary: Update user
- *     description: Updates a user's profile information
  *     tags:
  *       - Users
  *     parameters:
@@ -251,7 +197,6 @@ router.get("/:id", validateObjectId("id"), getUserById);
  *         required: true
  *         schema:
  *           type: string
- *         description: User ID
  *     requestBody:
  *       required: true
  *       content:
@@ -261,34 +206,8 @@ router.get("/:id", validateObjectId("id"), getUserById);
  *     responses:
  *       200:
  *         description: User updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/User'
- *       400:
- *         description: Invalid input data or user ID format
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: User not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       409:
- *         description: Username or email already exists
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.put("/:id", validateObjectId("id"), validateUserUpdate, updateUser);
 
@@ -297,7 +216,6 @@ router.put("/:id", validateObjectId("id"), validateUserUpdate, updateUser);
  * /users/{id}:
  *   delete:
  *     summary: Delete user
- *     description: Deletes a user from the system
  *     tags:
  *       - Users
  *     parameters:
@@ -306,36 +224,11 @@ router.put("/:id", validateObjectId("id"), validateUserUpdate, updateUser);
  *         required: true
  *         schema:
  *           type: string
- *         description: User ID
  *     responses:
  *       200:
  *         description: User deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     message:
- *                       type: string
- *                       example: User deleted successfully
- *       400:
- *         description: Invalid user ID format
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: User not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.delete("/:id", validateObjectId("id"), deleteUser);
 
