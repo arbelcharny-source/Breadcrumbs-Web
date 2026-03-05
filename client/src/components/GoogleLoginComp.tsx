@@ -14,7 +14,7 @@ const GoogleLoginComp = () => {
         const { user, accessToken, refreshToken } = response.data;
 
         login(
-          { ...user, imgUrl: user.profileUrl }, 
+          user, 
           accessToken, 
           refreshToken
         );

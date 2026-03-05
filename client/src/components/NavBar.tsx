@@ -8,7 +8,6 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // פונקציית עזר ליצירת מחלקות ה-Pill hover
   const getLinkClass = (path: string) => `
     flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300
     ${location.pathname === path 
@@ -16,16 +15,20 @@ const Navbar = () => {
       : 'text-[#4A3728] hover:bg-[#D2B48C]/20'}
   `;
 
+  const getImageUrl = (url?: string) => {
+    if (!url) return 'https://via.placeholder.com/150';
+    if (url.startsWith('http')) return url;
+    return `http://localhost:3000${url}`;
+  };
+
   return (
     <nav className="sticky top-0 z-50 w-full bg-[#FAF9F6]/90 backdrop-blur-md border-b border-[#D2B48C]/10 px-8 py-3">
       <div className="w-full flex items-center justify-between">
-        {/* Logo Section */}
         <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <img src={logo} alt="Breadcrumbs" className="w-8 h-8 object-contain" />
           <span className="text-xl font-bold text-[#2D2621] tracking-tighter lowercase">breadcrumbs</span>
         </Link>
 
-        {/* Navigation - Pill Hover Style */}
         <div className="flex items-center gap-4">
           <Link to="/explore" className={getLinkClass('/explore')}>
             <Compass size={18} />
@@ -38,14 +41,13 @@ const Navbar = () => {
           
           <div className="h-6 w-[1px] bg-[#D2B48C]/20 mx-2"></div>
 
-          {/* Profile & Logout */}
           <div className="flex items-center gap-3">
             <button 
               onClick={() => navigate('/profile')}
               className={`p-0.5 rounded-full border-2 transition-all ${location.pathname === '/profile' ? 'border-[#4A3728]' : 'border-transparent hover:border-[#D2B48C]'}`}
             >
               <img 
-                src={user?.imgUrl || 'https://via.placeholder.com/150'} 
+                src={getImageUrl(user?.profileUrl)} 
                 alt="Profile" 
                 className="w-7 h-7 rounded-full object-cover shadow-sm" 
               />
