@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { asyncHandler } from '../middleware/error.middleware.js';
+import { asyncHandler, AppError } from '../middleware/error.middleware.js';
 import { sendCreated, sendSuccess } from '../utils/response.js';
 import userService from '../services/user.service.js';
+import postService from '../services/post.service.js';
 
 interface CreateUserBody {
   username: string;
@@ -83,21 +84,66 @@ export const getAllUsers = asyncHandler(async (_req: Request, res: Response): Pr
   sendSuccess(res, users);
 });
 
+export const getProfile = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const userId = req.params.id;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 12;
+
+  const user = await userService.getUserById(userId);
+  const postsResult = await postService.getPostsBySenderWithStats(userId, { page, limit });
+  
+  sendSuccess(res, {
+    user,
+    ...(Array.isArray(postsResult) ? { posts: postsResult } : { posts: postsResult.data, pagination: postsResult.pagination })
+  });
+});
+
+export const updateBio = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user?.userId;
+  const { bio } = req.body as { bio: string };
+
+  if (!userId) {
+    res.status(401).json({ success: false, error: 'Unauthorized' });
+    return;
+  }
+
+  const updatedUser = await userService.updateUser(userId, { bio });
+  sendSuccess(res, updatedUser);
+});
+
 interface UpdateUserBody {
   username?: string;
   email?: string;
   fullName?: string;
+  bio?: string;
 }
 
 export const updateUser = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const id = req.params.id as string;
+  const loggedInUserId = req.user?.userId;
+
+  if (id !== loggedInUserId) {
+    throw new AppError('You can only update your own profile', 403);
+  }
+
   const updates = req.body as UpdateUserBody;
+  
+  if (req.file) {
+    (updates as any).profileUrl = `/uploads/${req.file.filename}`;
+  }
+
   const user = await userService.updateUser(id, updates);
   sendSuccess(res, user);
 });
 
 export const deleteUser = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const id = req.params.id as string;
+  const loggedInUserId = req.user?.userId;
+
+  if (id !== loggedInUserId) {
+    throw new AppError('You can only delete your own account', 403);
+  }
+
   await userService.deleteUser(id);
   sendSuccess(res, { message: 'User deleted successfully' });
 });

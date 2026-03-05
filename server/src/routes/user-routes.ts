@@ -1,8 +1,22 @@
 import express from "express";
-import { createUser, login, googleLogin, refreshToken, logout, logoutAll, getUserById, getAllUsers, updateUser, deleteUser } from "../controllers/user-controller.js";
+import { 
+  createUser, 
+  login, 
+  googleLogin, 
+  refreshToken, 
+  logout, 
+  logoutAll, 
+  getUserById, 
+  getAllUsers, 
+  updateUser, 
+  deleteUser,
+  getProfile,
+  updateBio
+} from "../controllers/user-controller.js";
 import { validateUserRegistration, validateLogin, validateRefreshToken, validateUserUpdate } from "../middleware/validation.middleware.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { validateObjectId } from "../utils/validation.js";
+import { upload } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -165,6 +179,53 @@ router.get("/", getAllUsers);
 
 /**
  * @swagger
+ * /users/profile/bio:
+ *   patch:
+ *     summary: Update user bio
+ *     tags:
+ *       - Users
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               bio:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Bio updated successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.patch("/profile/bio", authenticate, updateBio);
+
+/**
+ * @swagger
+ * /users/profile/{id}:
+ *   get:
+ *     summary: Get user profile and posts
+ *     tags:
+ *       - Users
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Profile retrieved successfully
+ *       404:
+ *         description: User not found
+ */
+router.get("/profile/:id", validateObjectId("id"), getProfile);
+
+/**
+ * @swagger
  * /users/{id}:
  *   get:
  *     summary: Get user by ID
@@ -209,7 +270,7 @@ router.get("/:id", validateObjectId("id"), getUserById);
  *       404:
  *         description: User not found
  */
-router.put("/:id", validateObjectId("id"), validateUserUpdate, updateUser);
+router.put("/:id", authenticate, validateObjectId("id"), upload.single('image'), validateUserUpdate, updateUser);
 
 /**
  * @swagger
@@ -230,6 +291,6 @@ router.put("/:id", validateObjectId("id"), validateUserUpdate, updateUser);
  *       404:
  *         description: User not found
  */
-router.delete("/:id", validateObjectId("id"), deleteUser);
+router.delete("/:id", authenticate, validateObjectId("id"), deleteUser);
 
 export default router;

@@ -9,6 +9,7 @@ export interface IUser extends Document {
     googleId?: string;
     profileUrl?: string;
     refreshTokens: string[];
+    bio: string;
     createdAt: Date;
     updatedAt: Date;
     comparePassword(candidatePassword: string): Promise<boolean>;
@@ -52,6 +53,11 @@ const userSchema = new Schema<IUser>({
         type: [String],
         default: [],
         select: false,
+    },
+    bio: {
+        type: String,
+        default: "Exploring the world one crumb at a time",
+        maxLength: 200
     },
 }, {
     timestamps: true,
