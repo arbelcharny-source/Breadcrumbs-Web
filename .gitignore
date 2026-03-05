@@ -141,3 +141,7 @@ vite.config.ts.timestamp-*
 .vscode/
 
 client/package-lock.json
+server/package-lock.json
+
+server/uploads/*
+!server/uploads/.gitkeep
