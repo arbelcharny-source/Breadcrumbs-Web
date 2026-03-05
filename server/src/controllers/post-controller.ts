@@ -19,13 +19,17 @@ interface UpdatePostBody {
 }
 
 export const createPost = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { title, tripName, content, location } = req.body as CreatePostBody;
   const ownerId = req.user?.userId;
 
   if (!ownerId) {
     throw new AppError('Unauthorized', 401);
   }
 
+  // Set ownerId in body for validation middleware if it runs after or if we need it
+  req.body.ownerId = ownerId;
+
+  const { title, tripName, content, location } = req.body as CreatePostBody;
+  
   const finalTitle = tripName || title || "Untitled Trip";
 
   let imageAttachmentUrl = req.body.imageAttachmentUrl;
