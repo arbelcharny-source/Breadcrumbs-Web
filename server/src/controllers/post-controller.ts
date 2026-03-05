@@ -1,23 +1,39 @@
 import { Request, Response } from 'express';
-import { asyncHandler } from '../middleware/error.middleware.js';
+import { asyncHandler, AppError } from '../middleware/error.middleware.js';
 import { sendSuccess, sendCreated } from '../utils/response.js';
 import postService from '../services/post.service.js';
 
 interface CreatePostBody {
-  title: string;
+  title?: string;
+  tripName?: string; // alias for title
   content: string;
   ownerId: string;
   imageAttachmentUrl?: string;
+  location?: string;
 }
 
 interface UpdatePostBody {
-  content: string;
+  title?: string;
+  content?: string;
+  location?: string;
 }
 
 export const createPost = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { title, content, ownerId, imageAttachmentUrl } = req.body as CreatePostBody;
+  const { title, tripName, content, location } = req.body as CreatePostBody;
+  const ownerId = req.user?.userId;
 
-  const post = await postService.createPost(title, content, ownerId, imageAttachmentUrl);
+  if (!ownerId) {
+    throw new AppError('Unauthorized', 401);
+  }
+
+  const finalTitle = tripName || title || "Untitled Trip";
+
+  let imageAttachmentUrl = req.body.imageAttachmentUrl;
+  if (req.file) {
+    imageAttachmentUrl = `/uploads/${req.file.filename}`;
+  }
+
+  const post = await postService.createPost(finalTitle, content, ownerId, imageAttachmentUrl, location);
 
   sendCreated(res, post);
 });
@@ -51,15 +67,36 @@ export const getPostsBySender = asyncHandler(async (req: Request, res: Response)
 
 export const updatePost = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const id = req.params._id as string;
-  const { content } = req.body as UpdatePostBody;
+  const userId = req.user?.userId;
 
-  const updatedPost = await postService.updatePost(id, content);
+  const post = await postService.getPostById(id);
+  if (post.ownerId.toString() !== userId) {
+    throw new AppError('You do not have permission to modify this post.', 401);
+  }
+
+  const { title, content, location } = req.body as UpdatePostBody;
+  const updates: any = {};
+  if (title !== undefined) updates.title = title;
+  if (content !== undefined) updates.content = content;
+  if (location !== undefined) updates.location = location;
+
+  if (req.file) {
+    updates.imageAttachmentUrl = `/uploads/${req.file.filename}`;
+  }
+
+  const updatedPost = await postService.updatePost(id, updates);
 
   sendSuccess(res, updatedPost);
 });
 
 export const deletePost = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const id = req.params._id as string;
+  const userId = req.user?.userId;
+
+  const post = await postService.getPostById(id);
+  if (post.ownerId.toString() !== userId) {
+    throw new AppError('You do not have permission to modify this post.', 401);
+  }
 
   await postService.deletePost(id);
 

@@ -2,6 +2,8 @@ import express from "express";
 import { createPost, getAllPosts, getPostByID, getPostsBySender, updatePost, deletePost } from "../controllers/post-controller.js";
 import { validatePostCreation, validatePostUpdate } from "../middleware/validation.middleware.js";
 import { validateObjectId } from "../utils/validation.js";
+import { authenticate } from "../middleware/auth.middleware.js";
+import { upload } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -45,7 +47,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/", validatePostCreation, createPost);
+router.post("/", authenticate, upload.single('image'), validatePostCreation, createPost);
 
 /**
  * @swagger
@@ -202,7 +204,7 @@ router.get("/sender/:ownerId", validateObjectId("ownerId"), getPostsBySender);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put("/:_id", validateObjectId("_id"), validatePostUpdate, updatePost);
+router.put("/:_id", authenticate, validateObjectId("_id"), upload.single('image'), validatePostUpdate, updatePost);
 
 /**
  * @swagger
@@ -249,6 +251,6 @@ router.put("/:_id", validateObjectId("_id"), validatePostUpdate, updatePost);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete("/:_id", validateObjectId("_id"), deletePost);
+router.delete("/:_id", authenticate, validateObjectId("_id"), deletePost);
 
 export default router;
