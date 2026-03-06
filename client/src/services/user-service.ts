@@ -136,11 +136,20 @@ export const deletePost = async (id: string) => {
 
 export const createPost = async (formData: FormData) => {
     const token = localStorage.getItem("token");
+    const headers: any = {
+        'Content-Type': 'multipart/form-data',
+    };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    console.log("Create Post FormData:");
+    formData.forEach((value, key) => {
+        console.log(`${key}:`, value);
+    });
+
     const response = await apiClient.post<{ success: boolean; data: PostResponse }>("/posts", formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${token}`
-        },
+        headers,
     });
     return response.data;
 };
