@@ -57,7 +57,11 @@ const ProfilePage = () => {
         }
         
         const newPosts = response.data.posts;
-        setPosts(prev => append ? [...prev, ...newPosts] : newPosts);
+        setPosts(prev => {
+          if (!append) return newPosts;
+          const existingIds = new Set(prev.map(p => p._id));
+          return [...prev, ...newPosts.filter(p => !existingIds.has(p._id))];
+        });
         
         if (response.data.pagination) {
           setHasMore(response.data.pagination.page < response.data.pagination.totalPages);
@@ -232,7 +236,7 @@ const ProfilePage = () => {
 
         {/* Trips Grid */}
         {trips.length > 0 ? trips.map((trip, tripIdx) => (
-          <div key={trip.title + tripIdx} className="mb-14">
+          <div key={trip.title} className="mb-14">
             <div className="flex items-center justify-between mb-4 border-b border-[#D2B48C]/10 pb-2">
               <h3 className="text-base font-bold text-[#4A3728] uppercase tracking-[0.15em]">{trip.title}</h3>
               <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{trip.date}</span>
@@ -369,7 +373,7 @@ const EditProfileModal = ({ user, onClose, onSave, isSubmitting }: { user: UserR
                 type="text" 
                 value={formData.fullName}
                 onChange={e => setFormData({...formData, fullName: e.target.value})}
-                className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] font-medium"
+                className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] tracking-tighter"
                 required
               />
             </div>
@@ -379,7 +383,7 @@ const EditProfileModal = ({ user, onClose, onSave, isSubmitting }: { user: UserR
                 type="text" 
                 value={formData.username}
                 onChange={e => setFormData({...formData, username: e.target.value})}
-                className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] font-medium"
+                className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] tracking-tighter"
                 required
               />
             </div>
@@ -388,7 +392,7 @@ const EditProfileModal = ({ user, onClose, onSave, isSubmitting }: { user: UserR
               <textarea 
                 value={formData.bio}
                 onChange={e => setFormData({...formData, bio: e.target.value})}
-                className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] font-medium resize-none h-20"
+                className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] tracking-tighter resize-none h-20"
                 maxLength={200}
               />
             </div>
@@ -470,7 +474,7 @@ const EditPostModal = ({ post, onClose, onSave, onDelete, isSubmitting }: { post
                 type="text" 
                 value={formData.title}
                 onChange={e => setFormData({...formData, title: e.target.value})}
-                className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] font-medium"
+                className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] tracking-tighter placeholder:tracking-tighter"
                 required
               />
             </div>
@@ -480,7 +484,7 @@ const EditPostModal = ({ post, onClose, onSave, onDelete, isSubmitting }: { post
                 type="text" 
                 value={formData.location}
                 onChange={e => setFormData({...formData, location: e.target.value})}
-                className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] font-medium"
+                className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] tracking-tighter placeholder:tracking-tighter"
                 required
               />
             </div>
@@ -489,7 +493,7 @@ const EditPostModal = ({ post, onClose, onSave, onDelete, isSubmitting }: { post
               <textarea 
                 value={formData.content}
                 onChange={e => setFormData({...formData, content: e.target.value})}
-                className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] font-medium resize-none h-32"
+                className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] tracking-tighter placeholder:tracking-tighter resize-none h-32"
                 required
               />
             </div>

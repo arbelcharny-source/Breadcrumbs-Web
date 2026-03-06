@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react';
 import { Plus, X, Camera, MapPin, Loader2 } from 'lucide-react';
 import { createPost } from '../services/user-service';
+import { useUser } from '../context/UserContext';
 
 const FloatingAddButton = () => {
+  const { user, logout } = useUser();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -29,11 +31,17 @@ const FloatingAddButton = () => {
       return;
     }
 
+    if (!user?._id) {
+      alert("You must be logged in to drop a crumb.");
+      return;
+    }
+
     setIsSubmitting(true);
     const fd = new FormData();
-    fd.append('tripName', formData.title); // Using tripName as per controller expectations
+    fd.append('title', formData.title);
     fd.append('content', formData.content);
     fd.append('location', formData.location);
+    fd.append('ownerId', user._id);
     fd.append('image', file);
 
     try {
@@ -43,12 +51,16 @@ const FloatingAddButton = () => {
         setFormData({ title: '', content: '', location: '' });
         setFile(null);
         setPreview(null);
-        // Dispatch event to refresh profile if we are on it
         window.dispatchEvent(new CustomEvent('post-created'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating post:", error);
-      alert("Failed to create crumb. Please try again.");
+      if (error.response?.status === 401) {
+        alert("Session expired or unauthorized. Logging out...");
+        logout();
+      } else {
+        alert("Failed to create crumb. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -107,7 +119,7 @@ const FloatingAddButton = () => {
                     placeholder="e.g., Summer in Italy"
                     value={formData.title}
                     onChange={e => setFormData({...formData, title: e.target.value})}
-                    className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] font-medium"
+                    className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] tracking-tighter placeholder:tracking-tighter"
                     required
                   />
                 </div>
@@ -121,7 +133,7 @@ const FloatingAddButton = () => {
                       placeholder="City, Country"
                       value={formData.location}
                       onChange={e => setFormData({...formData, location: e.target.value})}
-                      className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 pl-7 pr-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] font-medium"
+                      className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 pl-7 pr-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] tracking-tighter placeholder:tracking-tighter"
                       required
                     />
                   </div>
@@ -133,7 +145,7 @@ const FloatingAddButton = () => {
                     placeholder="What happened here?"
                     value={formData.content}
                     onChange={e => setFormData({...formData, content: e.target.value})}
-                    className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] font-medium resize-none h-24"
+                    className="w-full bg-transparent border-b border-[#D2B48C]/30 py-2 px-1 focus:outline-none focus:border-[#2D2621] transition-colors text-[#2D2621] tracking-tighter placeholder:tracking-tighter resize-none h-24"
                     required
                   />
                 </div>
