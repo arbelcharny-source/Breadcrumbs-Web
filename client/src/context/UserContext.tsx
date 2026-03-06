@@ -49,12 +49,13 @@ const login = (userData: User, accessToken: string, refreshToken: string) => {
     localStorage.setItem("refreshToken", refreshToken);
 };
 
-    const logout = () => {
-        setUser(null);
-        setToken(null);
+    const logout = async () => {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");
+        
+        setUser(null);
+        setToken(null);
     };
 
     const updateUser = (updatedUser: User) => {
