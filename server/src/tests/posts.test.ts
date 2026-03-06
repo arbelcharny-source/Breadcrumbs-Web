@@ -275,6 +275,36 @@ describe("Posts API", () => {
     expect(response.statusCode).toBe(404);
     expect(response.body.success).toBe(false);
   });
+
+  test("Create Post - 401 Unauthorized (Missing Token)", async () => {
+    const response = await request(app)
+      .post("/posts")
+      .send({
+        title: "Unauthorized Post",
+        content: "Content",
+        ownerId: userId
+      });
+    expect(response.statusCode).toBe(401);
+  });
+
+  test("Create Post - 400 Bad Request (Missing Content)", async () => {
+    const response = await request(app)
+      .post("/posts")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        title: "Missing Content",
+        ownerId: userId
+      });
+    expect(response.statusCode).toBe(400);
+    expect(response.body.success).toBe(false);
+  });
+
+  test("Get All Posts - Pagination with limit 0 (Edge Case)", async () => {
+    const response = await request(app).get("/posts?page=1&limit=0");
+    // Depending on implementation, it might return 400 or default limit. 
+    // Usually, it's 200 with default limit or empty if handled.
+    expect(response.statusCode).toBe(200);
+  });
 });
 
 test("Fail to create post with empty content", async () => {

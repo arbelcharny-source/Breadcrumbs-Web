@@ -266,4 +266,23 @@ describe("Comments API", () => {
     expect(response.statusCode).toBe(400);
     expect(response.body.success).toBe(false);
   });
+
+  test("Create Comment - 400 Bad Request (Missing Content)", async () => {
+    const response = await request(app)
+      .post("/comments")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        postId: postId,
+        ownerId: userId
+      });
+    expect(response.statusCode).toBe(400);
+    expect(response.body.success).toBe(false);
+  });
+
+  test("Update Comment - 401 Unauthorized (Missing Token)", async () => {
+    const response = await request(app)
+      .put(`/comments/${new mongoose.Types.ObjectId()}`)
+      .send({ content: "Unauthorized update" });
+    expect(response.statusCode).toBe(401);
+  });
 });

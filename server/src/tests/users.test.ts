@@ -555,10 +555,34 @@ describe("Users API", () => {
 
         const longBio = "a".repeat(201);
         const response = await request(app)
-            .patch("/users/profile/bio")
-            .set("Authorization", `Bearer ${token}`)
-            .send({ bio: longBio });
-        
+          .patch("/users/profile/bio")
+          .set("Authorization", `Bearer ${token}`)
+          .send({ bio: longBio });
+
         expect([400, 500]).toContain(response.statusCode);
-    });
-});
+        });
+
+        test("Update User - 401 Unauthorized (Missing Token)", async () => {
+        const response = await request(app)
+          .put(`/users/${new mongoose.Types.ObjectId()}`)
+          .send({ fullName: "New Name" });
+        expect(response.statusCode).toBe(401);
+        });
+
+        test("Update Bio - 401 Unauthorized (Missing Token)", async () => {
+        const response = await request(app)
+          .patch("/users/profile/bio")
+          .send({ bio: "New bio" });
+        expect(response.statusCode).toBe(401);
+        });
+
+        test("Register User - 400 Bad Request (Missing Password)", async () => {
+        const response = await request(app).post("/users/register").send({
+          username: "nopass",
+          email: "nopass@test.com",
+          fullName: "No Pass"
+        });
+        expect(response.statusCode).toBe(400);
+        expect(response.body.success).toBe(false);
+        });
+        });
