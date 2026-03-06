@@ -50,6 +50,16 @@ interface ProfileResponse {
     };
 }
 
+export const resolveImageUrl = (path: string | undefined | null, fallbackType: 'profile' | 'post' = 'post'): string => {
+    if (!path) {
+        return fallbackType === 'profile' 
+            ? 'https://placehold.co/400x400?text=User' 
+            : 'https://placehold.co/800x600?text=Breadcrumb';
+    }
+    if (path.startsWith('http')) return path;
+    return `http://localhost:3000${path}`;
+};
+
 apiClient.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
     if (token) {
