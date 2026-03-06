@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { useUser } from '../context/UserContext';
-import { login as loginService, register as registerService } from '../services/user-service';
+import { useUser } from '../../context/UserContext';
+import { login as loginService, register as registerService } from '../../services/user-service';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import GoogleLoginComp from './GoogleLoginComp';
-import logo from '../assets/Logo.png';
+import AuthHeader from './AuthHeader';
+import Input from '../common/Input';
 
 interface AuthFormProps {
   isLogin: boolean;
   toggleAuth: () => void;
 }
 
-const MIN_USERNAME_LENGHT = 2
-const MIN_PASSWORD_LENGHT = 6
+const MIN_USERNAME_LENGHT = 2;
+const MIN_PASSWORD_LENGHT = 6;
 
 const AuthForm = ({ isLogin, toggleAuth }: AuthFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -52,64 +53,46 @@ const AuthForm = ({ isLogin, toggleAuth }: AuthFormProps) => {
 
   return (
     <div className="min-h-screen bg-[#F7F3F0] flex flex-col items-center justify-center p-4">
-      <div className="flex flex-col items-center mb-8">
-        <img 
-          src={logo} 
-          alt="Breadcrumbs Logo" 
-          className="w-36 h-36 object-contain mb-6 drop-shadow-sm hover:scale-105 transition-transform duration-300"
-        />
-        <h1 className="text-4xl font-bold text-[#2D2621] mb-1 tracking-tight">Breadcrumbs</h1>
-        <p className="text-[#8B5E34] font-light tracking-wide">Your Travel Memories</p>
-      </div>
+      <AuthHeader />
 
       <div className="w-full max-w-md bg-white/60 backdrop-blur-md p-10 rounded-[3rem] shadow-sm border border-[#D2B48C]/20">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           
           {!isLogin && (
             <>
-              <div className="relative">
-                <User className="absolute left-5 top-1/2 -translate-y-1/2 text-stone-400 w-5 h-5" />
-                <input 
-                  type="text" 
-                  placeholder="Username" 
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full pl-14 pr-6 py-4 bg-input-gray border-none rounded-full focus:ring-2 focus:ring-[#D2B48C] outline-none transition-all placeholder:text-stone-400"
-                />
-              </div>
-              <div className="relative">
-                <User className="absolute left-5 top-1/2 -translate-y-1/2 text-stone-400 w-5 h-5" />
-                <input 
-                  type="text" 
-                  placeholder="Full name" 
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="w-full pl-14 pr-6 py-4 bg-input-gray border-none rounded-full focus:ring-2 focus:ring-[#D2B48C] outline-none transition-all placeholder:text-stone-400"
-                />
-              </div>
+              <Input 
+                type="text" 
+                placeholder="Username" 
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                Icon={User}
+              />
+              <Input 
+                type="text" 
+                placeholder="Full name" 
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                Icon={User}
+              />
             </>
           )}
 
-          <div className="relative">
-            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-stone-400 w-5 h-5" />
-            <input 
-              type="email" 
-              placeholder="Email" 
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full pl-14 pr-6 py-4 bg-input-gray border-none rounded-full focus:ring-2 focus:ring-[#D2B48C] outline-none transition-all placeholder:text-stone-400"
-            />
-          </div>
+          <Input 
+            type="email" 
+            placeholder="Email" 
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            Icon={Mail}
+          />
 
-          <div className="relative">
-            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-stone-400 w-5 h-5" />
-            <input 
-              type={showPassword ? "text" : "password"} 
-              placeholder="Password" 
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full pl-14 pr-14 py-4 bg-input-gray border-none rounded-full focus:ring-2 focus:ring-[#D2B48C] outline-none transition-all placeholder:text-stone-400"
-            />
+          <Input 
+            type={showPassword ? "text" : "password"} 
+            placeholder="Password" 
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            Icon={Lock}
+            className="group"
+          >
             <button 
               type="button"
               onClick={() => setShowPassword(!showPassword)}
@@ -117,7 +100,7 @@ const AuthForm = ({ isLogin, toggleAuth }: AuthFormProps) => {
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
-          </div>
+          </Input>
 
           {error && <p className="text-red-500 text-sm px-4 font-medium text-center">{error}</p>}
 
