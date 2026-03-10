@@ -195,6 +195,22 @@ export class PostService {
     const post = await Post.findById(postId);
     return !!post;
   }
+
+  async toggleLike(postId: string, userId: string): Promise<IPost> {
+    const post = await Post.findById(postId);
+    if (!post) {
+      throw new AppError(`Post with id ${postId} not found`, 404);
+    }
+
+    const likeIndex = post.likes.indexOf(userId as any);
+    if (likeIndex === -1) {
+      post.likes.push(userId as any);
+    } else {
+      post.likes.splice(likeIndex, 1);
+    }
+
+    return await post.save();
+  }
 }
 
 export default new PostService();

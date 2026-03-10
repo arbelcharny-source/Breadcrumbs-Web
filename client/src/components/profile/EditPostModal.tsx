@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { X, Camera, Trash2, Loader2 } from 'lucide-react';
-import { type PostResponse } from '../../services/user-service';
+import { type PostResponse, resolveImageUrl } from '../../services/user-service';
 import Input from '../common/Input';
 
 interface EditPostModalProps {
@@ -17,7 +17,7 @@ const EditPostModal = ({ post, onClose, onSave, onDelete, isSubmitting }: EditPo
     content: post.content,
     location: post.location
   });
-  const [preview, setPreview] = useState(post.imageAttachmentUrl ? (post.imageAttachmentUrl.startsWith('http') ? post.imageAttachmentUrl : `http://localhost:3000${post.imageAttachmentUrl}`) : '');
+  const [preview, setPreview] = useState(resolveImageUrl(post.imageAttachmentUrl));
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

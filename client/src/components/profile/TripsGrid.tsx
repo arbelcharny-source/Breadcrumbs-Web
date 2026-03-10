@@ -12,9 +12,11 @@ interface TripsGridProps {
   user: any; 
   lastPostElementRef: (node: HTMLDivElement) => void;
   onEditPost: (post: PostResponse) => void;
+  onLike: (post: PostResponse) => void;
+  onComment: (post: PostResponse) => void;
 }
 
-const TripsGrid = ({ trips, user, lastPostElementRef, onEditPost }: TripsGridProps) => {
+const TripsGrid = ({ trips, user, lastPostElementRef, onEditPost, onLike, onComment }: TripsGridProps) => {
   return (
     <>
       {trips.map((trip, tripIdx) => (
@@ -46,8 +48,20 @@ const TripsGrid = ({ trips, user, lastPostElementRef, onEditPost }: TripsGridPro
                       </button>
                     )}
                     <div className="flex gap-4">
-                      <div className="flex items-center gap-1.5"><Heart size={16} fill="white" /> <span className="text-xs font-bold">{crumb.likesCount}</span></div>
-                      <div className="flex items-center gap-1.5"><MessageCircle size={16} fill="white" /> <span className="text-xs font-bold">{crumb.commentsCount}</span></div>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onLike(crumb); }}
+                        className="flex items-center gap-1.5 hover:scale-110 transition-transform"
+                      >
+                        <Heart size={16} fill="white" /> 
+                        <span className="text-xs font-bold">{crumb.likesCount}</span>
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onComment(crumb); }}
+                        className="flex items-center gap-1.5 hover:scale-110 transition-transform"
+                      >
+                        <MessageCircle size={16} fill="white" /> 
+                        <span className="text-xs font-bold">{crumb.commentsCount}</span>
+                      </button>
                     </div>
                     <span className="text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 opacity-90">
                       <MapPin size={10} className="text-[#D2B48C]" /> {crumb.location}
