@@ -1,6 +1,6 @@
 import { useGoogleLogin } from "@react-oauth/google";
-import { googleSignin } from "../services/user-service";
-import { useUser } from "../context/UserContext";
+import { googleSignin } from "../../services/user-service";
+import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 
 const GoogleLoginComp = () => {
@@ -14,7 +14,7 @@ const GoogleLoginComp = () => {
         const { user, accessToken, refreshToken } = response.data;
 
         login(
-          { ...user, imgUrl: user.profileUrl }, 
+          user, 
           accessToken, 
           refreshToken
         );

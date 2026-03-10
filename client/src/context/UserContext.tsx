@@ -1,10 +1,12 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
-interface User {
+export interface User {
     _id: string;
     username: string;
+    fullName: string;
     email: string;
-    imgUrl?: string;
+    profileUrl?: string;
+    bio?: string;
 }
 
 interface UserContextType {
@@ -12,6 +14,8 @@ interface UserContextType {
     token: string | null;
     login: (userData: User, accessToken: string, refreshToken: string) => void; 
     logout: () => void;
+    updateUser: (updatedUser: User) => void;
+    updateBio: (newBio: string) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -45,15 +49,30 @@ const login = (userData: User, accessToken: string, refreshToken: string) => {
     localStorage.setItem("refreshToken", refreshToken);
 };
 
-    const logout = () => {
-        setUser(null);
-        setToken(null);
+    const logout = async () => {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        
+        setUser(null);
+        setToken(null);
+    };
+
+    const updateUser = (updatedUser: User) => {
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+    };
+
+    const updateBio = (newBio: string) => {
+        if (user) {
+            const updatedUser = { ...user, bio: newBio };
+            setUser(updatedUser);
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+        }
     };
 
     return (
-        <UserContext.Provider value={{ user, token, login, logout }}>
+        <UserContext.Provider value={{ user, token, login, logout, updateUser, updateBio }}>
             {children}
         </UserContext.Provider>
     );

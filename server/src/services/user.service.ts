@@ -13,6 +13,7 @@ export interface UserResponse {
   createdAt?: Date;
   updatedAt?: Date;
   profileUrl?: string;
+  bio?: string;
 }
 
 export interface UserRegistrationResult {
@@ -63,7 +64,8 @@ export class UserService {
       fullName: user.fullName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      profileUrl: user.profileUrl
+      profileUrl: user.profileUrl,
+      bio: user.bio
     };
 
     return {
@@ -111,7 +113,8 @@ export class UserService {
       fullName: user.fullName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      profileUrl: user.profileUrl
+      profileUrl: user.profileUrl,
+      bio: user.bio
     };
 
     return {
@@ -190,7 +193,8 @@ export class UserService {
       fullName: user.fullName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      profileUrl: user.profileUrl
+      profileUrl: user.profileUrl,
+      bio: user.bio
     };
 
     return {
@@ -261,7 +265,8 @@ export class UserService {
       fullName: user.fullName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      profileUrl: user.profileUrl
+      profileUrl: user.profileUrl,
+      bio: user.bio
     };
   }
 
@@ -275,11 +280,12 @@ export class UserService {
       fullName: user.fullName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      profileUrl: user.profileUrl
+      profileUrl: user.profileUrl,
+      bio: user.bio
     }));
   }
 
-  async updateUser(userId: string, updates: { username?: string; email?: string; fullName?: string }): Promise<UserResponse> {
+  async updateUser(userId: string, updates: { username?: string; email?: string; fullName?: string; bio?: string; profileUrl?: string }): Promise<UserResponse> {
     if (updates.username) {
       const existingUser = await User.findOne({ username: updates.username, _id: { $ne: userId } });
       if (existingUser) {
@@ -311,7 +317,8 @@ export class UserService {
       fullName: user.fullName,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      profileUrl: user.profileUrl
+      profileUrl: user.profileUrl,
+      bio: user.bio
     };
   }
 

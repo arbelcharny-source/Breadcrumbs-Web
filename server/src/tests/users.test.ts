@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import app from "../app.js";
 import User from "../models/user.js";
+import Post from "../models/post.js";
 
 jest.mock("../controllers/user-controller.js", () => {
     const actual = jest.requireActual("../controllers/user-controller.js");
@@ -43,6 +44,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
     await User.deleteMany({});
+    await Post.deleteMany({});
 });
 
 describe("Users API", () => {
@@ -257,30 +259,91 @@ describe("Users API", () => {
             password: "password123"
         });
         const userId = registerResponse.body.data.user._id;
+        const accessToken = registerResponse.body.data.accessToken;
 
-        const response = await request(app).put(`/users/${userId}`).send({
-            fullName: "Updated Name",
-            email: "updated@example.com"
-        });
+        const response = await request(app)
+            .put(`/users/${userId}`)
+            .set("Authorization", `Bearer ${accessToken}`)
+            .send({
+                fullName: "Updated Name",
+                email: "updated@example.com"
+            });
         expect(response.statusCode).toBe(200);
         expect(response.body.success).toBe(true);
         expect(response.body.data.fullName).toBe("Updated Name");
         expect(response.body.data.email).toBe("updated@example.com");
     });
 
-    test("Update user - Not Found", async () => {
-        const nonExistentId = new mongoose.Types.ObjectId();
-        const response = await request(app).put(`/users/${nonExistentId}`).send({
-            fullName: "New Name"
+    test("Update user - 403 Forbidden (Updating another user)", async () => {
+        const registerResponse1 = await request(app).post("/users/register").send({
+            username: "victim",
+            email: "victim@test.com",
+            fullName: "Victim",
+            password: "password123"
         });
+        const victimId = registerResponse1.body.data.user._id;
+
+        const registerResponse2 = await request(app).post("/users/register").send({
+            username: "attacker",
+            email: "attacker@test.com",
+            fullName: "Attacker",
+            password: "password123"
+        });
+        const attackerToken = registerResponse2.body.data.accessToken;
+
+        const response = await request(app)
+            .put(`/users/${victimId}`)
+            .set("Authorization", `Bearer ${attackerToken}`)
+            .send({ fullName: "Hacked" });
+        
+        expect(response.statusCode).toBe(403);
+    });
+
+    test("Update user - Not Found", async () => {
+        // Since my controller checks req.user.userId === req.params.id FIRST,
+        // we can't get a 404 easily unless we delete the user after they authenticate.
+        const registerResponse = await request(app).post("/users/register").send({
+            username: "updateuser404",
+            email: "updateuser404@example.com",
+            fullName: "Update User",
+            password: "password123"
+        });
+        const userId = registerResponse.body.data.user._id;
+        const accessToken = registerResponse.body.data.accessToken;
+
+        // Delete the user from DB manually
+        await User.findByIdAndDelete(userId);
+
+        const response = await request(app)
+            .put(`/users/${userId}`)
+            .set("Authorization", `Bearer ${accessToken}`)
+            .send({
+                fullName: "New Name"
+            });
         expect(response.statusCode).toBe(404);
         expect(response.body.success).toBe(false);
     });
 
     test("Update user - Invalid format", async () => {
-        const response = await request(app).put("/users/invalid_id").send({
-            fullName: "New Name"
+        // To trigger 400 validation on ObjectId while still passing the ownership check, 
+        // we'd need parameters that mismatch or are invalid before the check.
+        // However, validateObjectId runs BEFORE the controller. 
+        // So a request to /users/invalid_id will fail validation immediately.
+        // But since it's a protected route, it needs a token.
+        const registerResponse = await request(app).post("/users/register").send({
+            username: "updateuserinvalid",
+            email: "updateuserinvalid@example.com",
+            fullName: "Update User",
+            password: "password123"
         });
+        const accessToken = registerResponse.body.data.accessToken;
+
+        const response = await request(app)
+            .put("/users/invalid_id")
+            .set("Authorization", `Bearer ${accessToken}`)
+            .send({
+                fullName: "New Name"
+            });
         expect(response.statusCode).toBe(400);
         expect(response.body.success).toBe(false);
     });
@@ -299,10 +362,14 @@ describe("Users API", () => {
             password: "password123"
         });
         const userId = registerResponse.body.data.user._id;
+        const accessToken = registerResponse.body.data.accessToken;
 
-        const response = await request(app).put(`/users/${userId}`).send({
-            email: "existing@example.com"
-        });
+        const response = await request(app)
+            .put(`/users/${userId}`)
+            .set("Authorization", `Bearer ${accessToken}`)
+            .send({
+                email: "existing@example.com"
+            });
         expect(response.statusCode).toBe(409);
         expect(response.body.success).toBe(false);
     });
@@ -315,8 +382,11 @@ describe("Users API", () => {
             password: "password123"
         });
         const userId = registerResponse.body.data.user._id;
+        const accessToken = registerResponse.body.data.accessToken;
 
-        const response = await request(app).delete(`/users/${userId}`);
+        const response = await request(app)
+            .delete(`/users/${userId}`)
+            .set("Authorization", `Bearer ${accessToken}`);
         expect(response.statusCode).toBe(200);
         expect(response.body.success).toBe(true);
 
@@ -325,14 +395,36 @@ describe("Users API", () => {
     });
 
     test("Delete user - Not Found", async () => {
-        const nonExistentId = new mongoose.Types.ObjectId();
-        const response = await request(app).delete(`/users/${nonExistentId}`);
+        const registerResponse = await request(app).post("/users/register").send({
+            username: "deleteuser404",
+            email: "deleteuser404@example.com",
+            fullName: "Delete User",
+            password: "password123"
+        });
+        const userId = registerResponse.body.data.user._id;
+        const accessToken = registerResponse.body.data.accessToken;
+
+        await User.findByIdAndDelete(userId);
+
+        const response = await request(app)
+            .delete(`/users/${userId}`)
+            .set("Authorization", `Bearer ${accessToken}`);
         expect(response.statusCode).toBe(404);
         expect(response.body.success).toBe(false);
     });
 
     test("Delete user - Invalid format", async () => {
-        const response = await request(app).delete("/users/invalid_id");
+        const registerResponse = await request(app).post("/users/register").send({
+            username: "deleteuserinvalid",
+            email: "deleteuserinvalid@example.com",
+            fullName: "Delete User",
+            password: "password123"
+        });
+        const accessToken = registerResponse.body.data.accessToken;
+
+        const response = await request(app)
+            .delete("/users/invalid_id")
+            .set("Authorization", `Bearer ${accessToken}`);
         expect(response.statusCode).toBe(400);
         expect(response.body.success).toBe(false);
     });
@@ -381,4 +473,116 @@ describe("Users API", () => {
             expect(refreshRes.statusCode).not.toBe(200);
         }
     });
-});
+
+    test("Logout from all devices (Logout All)", async () => {
+        const registerResponse = await request(app).post("/users/register").send({
+            username: "logoutalluser",
+            email: "logoutall@example.com",
+            fullName: "Logout All",
+            password: "password123"
+        });
+
+        const accessToken = registerResponse.body.data.accessToken;
+        const refreshToken = registerResponse.body.data.refreshToken;
+
+        const response = await request(app)
+            .post("/users/logout-all")
+            .set("Authorization", `Bearer ${accessToken}`);
+        
+        expect(response.statusCode).toBe(200);
+        expect(response.body.success).toBe(true);
+
+        // Verify refresh token is now invalid
+        const refreshRes = await request(app).post("/users/refresh").send({
+            refreshToken
+        });
+        expect(refreshRes.statusCode).toBe(401);
+    });
+
+    test("Get Profile - Success with Pagination", async () => {
+        const registerResponse = await request(app).post("/users/register").send({
+            username: "profileuser",
+            email: "profile@test.com",
+            fullName: "Profile User",
+            password: "password123"
+        });
+        const userId = registerResponse.body.data.user._id;
+
+        // Create 15 posts
+        for (let i = 0; i < 15; i++) {
+            await Post.create({
+                title: "Trip",
+                content: `Crumb ${i}`,
+                ownerId: new mongoose.Types.ObjectId(userId),
+                location: "Test Location"
+            });
+        }
+
+        const response = await request(app).get(`/users/profile/${userId}?page=1&limit=10`);
+        expect(response.statusCode).toBe(200);
+        expect(response.body.data.user.username).toBe("profileuser");
+        expect(response.body.data.posts.length).toBe(10);
+        expect(response.body.data.pagination.total).toBe(15);
+    });
+
+    test("Update Bio - Success", async () => {
+        const registerResponse = await request(app).post("/users/register").send({
+            username: "biouser",
+            email: "bio@test.com",
+            fullName: "Bio User",
+            password: "password123"
+        });
+        const token = registerResponse.body.data.accessToken;
+
+        const newBio = "New travel bio";
+        const response = await request(app)
+            .patch("/users/profile/bio")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ bio: newBio });
+        
+        expect(response.statusCode).toBe(200);
+        expect(response.body.data.bio).toBe(newBio);
+    });
+
+    test("Update Bio - 400/500 Validation Error (Exceeds Max Length)", async () => {
+        const registerResponse = await request(app).post("/users/register").send({
+            username: "longbiouser",
+            email: "longbio@test.com",
+            fullName: "Long Bio",
+            password: "password123"
+        });
+        const token = registerResponse.body.data.accessToken;
+
+        const longBio = "a".repeat(201);
+        const response = await request(app)
+          .patch("/users/profile/bio")
+          .set("Authorization", `Bearer ${token}`)
+          .send({ bio: longBio });
+
+        expect([400, 500]).toContain(response.statusCode);
+        });
+
+        test("Update User - 401 Unauthorized (Missing Token)", async () => {
+        const response = await request(app)
+          .put(`/users/${new mongoose.Types.ObjectId()}`)
+          .send({ fullName: "New Name" });
+        expect(response.statusCode).toBe(401);
+        });
+
+        test("Update Bio - 401 Unauthorized (Missing Token)", async () => {
+        const response = await request(app)
+          .patch("/users/profile/bio")
+          .send({ bio: "New bio" });
+        expect(response.statusCode).toBe(401);
+        });
+
+        test("Register User - 400 Bad Request (Missing Password)", async () => {
+        const response = await request(app).post("/users/register").send({
+          username: "nopass",
+          email: "nopass@test.com",
+          fullName: "No Pass"
+        });
+        expect(response.statusCode).toBe(400);
+        expect(response.body.success).toBe(false);
+        });
+        });

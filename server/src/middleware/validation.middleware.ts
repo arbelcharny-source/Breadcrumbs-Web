@@ -72,10 +72,10 @@ export const validateRefreshToken = (req: Request, res: Response, next: NextFunc
 };
 
 export const validatePostCreation = (req: Request, res: Response, next: NextFunction): void => {
-  const { title, content, ownerId } = req.body;
+  const { title, tripName, content, ownerId, location } = req.body;
 
-  if (!title || !content || !ownerId) {
-    sendValidationError(res, 'Title, content, and ownerId are required');
+  if ((!title && !tripName) || !content || !ownerId) {
+    sendValidationError(res, 'Title (or tripName), content, and ownerId are required');
     return;
   }
 
@@ -84,24 +84,40 @@ export const validatePostCreation = (req: Request, res: Response, next: NextFunc
     return;
   }
 
+  if (location !== undefined && typeof location !== 'string') {
+    sendValidationError(res, 'Location must be a string');
+    return;
+  }
+
   next();
 };
 
 export const validatePostUpdate = (req: Request, res: Response, next: NextFunction): void => {
-  const { content } = req.body;
+  const { content, location, title } = req.body;
 
-  if (!content) {
-    sendValidationError(res, 'Content is required');
+  if (content === undefined && location === undefined && title === undefined && !req.file) {
+    sendValidationError(res, 'At least one field (content, location, title, or image) is required for update');
     return;
   }
 
-  if (typeof content !== 'string') {
-    sendValidationError(res, 'Content must be a string');
+  if (content !== undefined) {
+    if (typeof content !== 'string') {
+      sendValidationError(res, 'Content must be a string');
+      return;
+    }
+    if (content.trim().length < 1 || content.trim().length > 10000) {
+      sendValidationError(res, 'Content must be between 1 and 10000 characters');
+      return;
+    }
+  }
+
+  if (location !== undefined && typeof location !== 'string') {
+    sendValidationError(res, 'Location must be a string');
     return;
   }
 
-  if (content.trim().length < 1 || content.trim().length > 10000) {
-    sendValidationError(res, 'Content must be between 1 and 10000 characters');
+  if (title !== undefined && typeof title !== 'string') {
+    sendValidationError(res, 'Title must be a string');
     return;
   }
 
@@ -161,10 +177,10 @@ export const validateCommentUpdate = (req: Request, res: Response, next: NextFun
 };
 
 export const validateUserUpdate = (req: Request, res: Response, next: NextFunction): void => {
-  const { username, email, fullName } = req.body;
+  const { username, email, fullName, bio } = req.body;
 
-  if (!username && !email && !fullName) {
-    sendValidationError(res, 'At least one field (username, email, or fullName) is required');
+  if (!username && !email && !fullName && !bio && !req.file) {
+    sendValidationError(res, 'At least one field (username, email, fullName, bio, or image) is required');
     return;
   }
 
@@ -198,6 +214,17 @@ export const validateUserUpdate = (req: Request, res: Response, next: NextFuncti
     }
     if (fullName.trim().length < 2 || fullName.trim().length > 100) {
       sendValidationError(res, 'Full name must be between 2 and 100 characters');
+      return;
+    }
+  }
+
+  if (bio !== undefined) {
+    if (typeof bio !== 'string') {
+      sendValidationError(res, 'Bio must be a string');
+      return;
+    }
+    if (bio.length > 200) {
+      sendValidationError(res, 'Bio cannot exceed 200 characters');
       return;
     }
   }

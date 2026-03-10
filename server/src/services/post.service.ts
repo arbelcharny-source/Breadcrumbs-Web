@@ -1,6 +1,9 @@
 import Post, { IPost } from '../models/post.js';
+import Comment from '../models/comment.js';
 import { AppError } from '../middleware/error.middleware.js';
 import userService from './user.service.js';
+import fs from 'fs';
+import path from 'path';
 
 export interface PaginationParams {
   page: number;
@@ -17,12 +20,25 @@ export interface PaginatedResult<T> {
   };
 }
 
+export interface PostWithStats extends Omit<IPost, keyof import('mongoose').Document> {
+  _id: any;
+  ownerId: any;
+  title: string;
+  content: string;
+  imageAttachmentUrl?: string;
+  location: string;
+  createdAt: Date;
+  likesCount: number;
+  commentsCount: number;
+}
+
 export class PostService {
   async createPost(
     title: string,
     content: string,
     ownerId: string,
-    imageAttachmentUrl?: string
+    imageAttachmentUrl?: string,
+    location?: string
   ): Promise<IPost> {
     const userExists = await userService.checkUserExists(ownerId);
 
@@ -34,7 +50,8 @@ export class PostService {
       title,
       content,
       ownerId,
-      imageAttachmentUrl
+      imageAttachmentUrl,
+      location
     });
 
     return post;
@@ -86,26 +103,92 @@ export class PostService {
     return posts;
   }
 
-  async updatePost(postId: string, content: string): Promise<IPost> {
-    const updatedPost = await Post.findByIdAndUpdate(
-      postId,
-      { content },
-      { new: true, runValidators: true }
-    );
+  async getPostsBySenderWithStats(ownerId: string, params?: PaginationParams): Promise<PaginatedResult<PostWithStats> | PostWithStats[]> {
+    const userExists = await userService.checkUserExists(ownerId);
 
-    if (!updatedPost) {
+    if (!userExists) {
+      throw new AppError(`User with id ${ownerId} not found`, 404);
+    }
+
+    let posts;
+    let total = 0;
+
+    if (params) {
+      const { page, limit } = params;
+      const skip = (page - 1) * limit;
+      
+      [posts, total] = await Promise.all([
+        Post.find({ ownerId }).skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
+        Post.countDocuments({ ownerId })
+      ]);
+    } else {
+      posts = await Post.find({ ownerId }).sort({ createdAt: -1 }).lean();
+    }
+    
+    const postsWithStats = await Promise.all(posts.map(async (post: any) => {
+      const commentsCount = await Comment.countDocuments({ postId: post._id });
+      return {
+        ...post,
+        likesCount: post.likes ? post.likes.length : 0,
+        commentsCount
+      };
+    }));
+
+    if (params) {
+      const { page, limit } = params;
+      return {
+        data: postsWithStats as PostWithStats[],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    }
+
+    return postsWithStats as PostWithStats[];
+  }
+
+  async updatePost(postId: string, updates: { content?: string; location?: string; title?: string; imageAttachmentUrl?: string }): Promise<IPost> {
+    const post = await Post.findById(postId);
+    if (!post) {
       throw new AppError(`Post with id ${postId} not found`, 404);
     }
 
-    return updatedPost;
+    // If new image is provided, optionally delete the old one
+    if (updates.imageAttachmentUrl && post.imageAttachmentUrl && post.imageAttachmentUrl.startsWith('/uploads/')) {
+      const oldPath = path.join(process.cwd(), post.imageAttachmentUrl);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
+    return updatedPost!;
   }
 
   async deletePost(postId: string): Promise<void> {
-    const post = await Post.findByIdAndDelete(postId);
+    const post = await Post.findById(postId);
 
     if (!post) {
       throw new AppError(`Post with id ${postId} not found`, 404);
     }
+
+    // Delete image file if it exists
+    if (post.imageAttachmentUrl && post.imageAttachmentUrl.startsWith('/uploads/')) {
+      const imagePath = path.join(process.cwd(), post.imageAttachmentUrl);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
+    await Post.findByIdAndDelete(postId);
   }
 
   async checkPostExists(postId: string): Promise<boolean> {

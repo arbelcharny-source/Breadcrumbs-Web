@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { asyncHandler } from '../middleware/error.middleware.js';
+import { asyncHandler, AppError } from '../middleware/error.middleware.js';
 import { sendSuccess, sendCreated } from '../utils/response.js';
 import commentService from '../services/comment.service.js';
 
@@ -14,7 +14,16 @@ interface UpdateCommentBody {
 }
 
 export const createComment = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { content, postId, ownerId } = req.body as CreateCommentBody;
+  const ownerId = req.user?.userId;
+
+  if (!ownerId) {
+    throw new AppError('Unauthorized', 401);
+  }
+
+  // Set ownerId in body for validation middleware
+  req.body.ownerId = ownerId;
+
+  const { content, postId } = req.body as CreateCommentBody;
 
   const comment = await commentService.createComment(content, postId, ownerId);
 
@@ -50,6 +59,13 @@ export const getCommentsByPost = asyncHandler(async (req: Request, res: Response
 
 export const updateComment = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const id = req.params._id as string;
+  const userId = req.user?.userId;
+
+  const comment = await commentService.getCommentById(id);
+  if (comment.ownerId.toString() !== userId) {
+    throw new AppError('You do not have permission to modify this comment.', 401);
+  }
+
   const { content } = req.body as UpdateCommentBody;
 
   const updatedComment = await commentService.updateComment(id, content);
@@ -59,6 +75,12 @@ export const updateComment = asyncHandler(async (req: Request, res: Response): P
 
 export const deleteComment = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const id = req.params._id as string;
+  const userId = req.user?.userId;
+
+  const comment = await commentService.getCommentById(id);
+  if (comment.ownerId.toString() !== userId) {
+    throw new AppError('You do not have permission to modify this comment.', 401);
+  }
 
   await commentService.deleteComment(id);
 
