@@ -104,3 +104,15 @@ export const deletePost = asyncHandler(async (req: Request, res: Response): Prom
 
   sendSuccess(res, { message: 'Post deleted successfully' });
 });
+
+export const toggleLike = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const id = req.params._id as string;
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    throw new AppError('Unauthorized', 401);
+  }
+
+  const post = await postService.toggleLike(id, userId);
+  sendSuccess(res, post);
+});

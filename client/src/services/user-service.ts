@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 const apiClient = axios.create({
-    baseURL: "http://localhost:3000",
+    baseURL: API_URL,
     headers: {
         "Content-Type": "application/json",
     },
@@ -57,7 +59,8 @@ export const resolveImageUrl = (path: string | undefined | null, fallbackType: '
             : 'https://placehold.co/800x600?text=Breadcrumb';
     }
     if (path.startsWith('http')) return path;
-    return `http://localhost:3000${path}`;
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    return `${API_URL}${path}`;
 };
 
 apiClient.interceptors.request.use((config) => {
@@ -161,6 +164,11 @@ export const createPost = async (formData: FormData) => {
     const response = await apiClient.post<{ success: boolean; data: PostResponse }>("/posts", formData, {
         headers,
     });
+    return response.data;
+};
+
+export const toggleLike = async (id: string) => {
+    const response = await apiClient.post<{ success: boolean; data: PostResponse }>(`/posts/like/${id}`);
     return response.data;
 };
 
