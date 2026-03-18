@@ -31,11 +31,6 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) {
-      alert("Please upload an image for your crumb.");
-      return;
-    }
-
     if (!user?._id) {
       alert("You must be logged in to drop a crumb.");
       return;
@@ -47,7 +42,9 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
     fd.append('content', formData.content);
     fd.append('location', formData.location);
     fd.append('ownerId', user._id);
-    fd.append('image', file);
+    if (file) {
+      fd.append('image', file);
+    }
 
     try {
       const response = await createPost(fd);

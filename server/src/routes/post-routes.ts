@@ -1,5 +1,5 @@
 import express from "express";
-import { createPost, getAllPosts, getPostByID, getPostsBySender, updatePost, deletePost } from "../controllers/post-controller.js";
+import { createPost, getAllPosts, getPostByID, getPostsBySender, updatePost, deletePost, toggleLike } from "../controllers/post-controller.js";
 import { validatePostCreation, validatePostUpdate } from "../middleware/validation.middleware.js";
 import { validateObjectId } from "../utils/validation.js";
 import { authenticate } from "../middleware/auth.middleware.js";
@@ -252,5 +252,25 @@ router.put("/:_id", authenticate, validateObjectId("_id"), upload.single('image'
  *               $ref: '#/components/schemas/Error'
  */
 router.delete("/:_id", authenticate, validateObjectId("_id"), deletePost);
+
+/**
+ * @swagger
+ * /posts/like/{_id}:
+ *   post:
+ *     summary: Toggle like on a post
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: _id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Like toggled
+ */
+router.post("/like/:_id", authenticate, validateObjectId("_id"), toggleLike);
 
 export default router;

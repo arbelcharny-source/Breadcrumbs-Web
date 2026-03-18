@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useUser } from '../context/UserContext';
 import { Loader2 } from 'lucide-react';
-import { getUserProfile, updateUser, updatePost, deletePost, type UserResponse, type PostResponse } from '../services/user-service';
+import { getUserProfile, updateUser, updatePost, deletePost, toggleLike, type UserResponse, type PostResponse } from '../services/user-service';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import TripsGrid, { type GroupedTrip } from '../components/profile/TripsGrid';
 import EditProfileModal from '../components/profile/EditProfileModal';
 import EditPostModal from '../components/profile/EditPostModal';
+import CommentsModal from '../components/comments/CommentsModal';
 
 const ProfilePage = () => {
   const { user, updateUser: updateContextUser, logout } = useUser();
@@ -18,6 +19,7 @@ const ProfilePage = () => {
   
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<PostResponse | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -172,6 +174,35 @@ const ProfilePage = () => {
     }
   };
 
+  const handleLike = async (post: PostResponse) => {
+    try {
+      const response = await toggleLike(post._id);
+      if (response.success) {
+        setPosts(prev => prev.map(p => p._id === post._id ? response.data : p));
+      }
+    } catch (error: any) {
+      console.error("Error toggling like:", error);
+      handleAuthError(error);
+    }
+  };
+
+  const handleCommentClick = (post: PostResponse) => {
+    setSelectedPost(post);
+    setIsCommentsModalOpen(true);
+  };
+
+  const handleCommentAdded = async () => {
+    if (!selectedPost) return;
+    try {
+      // Refresh only the specific post to update comment count
+      // Or just refresh the whole list for simplicity
+      setPage(1);
+      await fetchProfile(1, false);
+    } catch (error) {
+      console.error("Error refreshing comments count", error);
+    }
+  };
+
   if (loading && page === 1) {
     return (
       <div className="min-h-screen bg-[#F7F3F0] flex items-center justify-center">
@@ -201,6 +232,8 @@ const ProfilePage = () => {
               setSelectedPost(crumb);
               setIsPostModalOpen(true);
             }} 
+            onLike={handleLike}
+            onComment={handleCommentClick}
           />
         ) : !loading && (
           <div className="text-center py-20">
@@ -231,6 +264,14 @@ const ProfilePage = () => {
           onSave={(fd) => handleUpdatePost(selectedPost._id, fd)}
           onDelete={() => handleDeletePost(selectedPost._id)}
           isSubmitting={isSubmitting}
+        />
+      )}
+
+      {isCommentsModalOpen && selectedPost && (
+        <CommentsModal 
+          postId={selectedPost._id}
+          onClose={() => setIsCommentsModalOpen(false)}
+          onCommentAdded={handleCommentAdded}
         />
       )}
     </div>
