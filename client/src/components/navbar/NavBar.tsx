@@ -4,7 +4,7 @@ import UserActions from './UserActions';
 
 const Navbar = () => {
   return (
-    <nav className="sticky top-0 z-50 w-full bg-[#FAF9F6]/90 backdrop-blur-md border-b border-[#D2B48C]/10 px-8 py-3">
+    <nav className="sticky top-0 z-50 w-full bg-[#FAF9F6]/90 backdrop-blur-md border-b border-[#D2B48C]/10 px-4 md:px-8 py-3">
       <div className="w-full flex items-center justify-between">
         <NavBrand />
 

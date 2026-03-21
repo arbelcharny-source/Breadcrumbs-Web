@@ -10,12 +10,14 @@ interface CreatePostBody {
   ownerId: string;
   imageAttachmentUrl?: string;
   location?: string;
+  hashtags?: string;
 }
 
 interface UpdatePostBody {
   title?: string;
   content?: string;
   location?: string;
+  hashtags?: string;
 }
 
 export const createPost = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -25,7 +27,7 @@ export const createPost = asyncHandler(async (req: Request, res: Response): Prom
     throw new AppError('Unauthorized', 401);
   }
 
-  const { title, tripName, content, location, ownerId } = req.body as CreatePostBody;
+  const { title, tripName, content, location, ownerId, hashtags } = req.body as CreatePostBody;
   
   const finalTitle = tripName || title || "Untitled Trip";
   const finalOwnerId = ownerId || userId;
@@ -35,7 +37,12 @@ export const createPost = asyncHandler(async (req: Request, res: Response): Prom
     imageAttachmentUrl = `/uploads/${req.file.filename}`;
   }
 
-  const post = await postService.createPost(finalTitle, content, finalOwnerId, imageAttachmentUrl, location);
+  let hashtagsArray: string[] = [];
+  if (hashtags) {
+      hashtagsArray = hashtags.split(',').map(tag => tag.trim()).filter(t => t);
+  }
+
+  const post = await postService.createPost(finalTitle, content, finalOwnerId, imageAttachmentUrl, location, hashtagsArray);
 
   sendCreated(res, post);
 });
@@ -76,11 +83,14 @@ export const updatePost = asyncHandler(async (req: Request, res: Response): Prom
     throw new AppError('You do not have permission to modify this post.', 401);
   }
 
-  const { title, content, location } = req.body as UpdatePostBody;
+  const { title, content, location, hashtags } = req.body as UpdatePostBody;
   const updates: any = {};
   if (title !== undefined) updates.title = title;
   if (content !== undefined) updates.content = content;
   if (location !== undefined) updates.location = location;
+  if (hashtags !== undefined) {
+      updates.hashtags = hashtags.split(',').map((tag: string) => tag.trim()).filter((t: string) => t);
+  }
 
   if (req.file) {
     updates.imageAttachmentUrl = `/uploads/${req.file.filename}`;

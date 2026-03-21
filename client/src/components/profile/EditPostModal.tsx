@@ -15,7 +15,8 @@ const EditPostModal = ({ post, onClose, onSave, onDelete, isSubmitting }: EditPo
   const [formData, setFormData] = useState({
     title: post.title,
     content: post.content,
-    location: post.location
+    location: post.location,
+    hashtags: post.hashtags?.join(', ') || ''
   });
   const [preview, setPreview] = useState(resolveImageUrl(post.imageAttachmentUrl));
   const [file, setFile] = useState<File | null>(null);
@@ -35,14 +36,17 @@ const EditPostModal = ({ post, onClose, onSave, onDelete, isSubmitting }: EditPo
     fd.append('title', formData.title);
     fd.append('content', formData.content);
     fd.append('location', formData.location);
+    if (formData.hashtags.trim() !== '') {
+        fd.append('hashtags', formData.hashtags);
+    }
     if (file) fd.append('image', file);
     onSave(fd);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/20 backdrop-blur-md">
-      <div className="bg-[#FAF9F6] w-full max-w-2xl rounded-3xl p-8 shadow-2xl relative flex flex-col md:flex-row gap-8">
-        <button onClick={onClose} className="absolute top-6 right-6 p-2 text-stone-400 hover:text-stone-600 transition-colors z-10"><X size={20} /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black/20 backdrop-blur-md">
+      <div className="bg-[#FAF9F6] w-full max-w-2xl rounded-3xl md:rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative flex flex-col md:flex-row gap-6 md:gap-8 overflow-y-auto max-h-[90vh]">
+        <button onClick={onClose} className="absolute top-4 right-4 md:top-6 md:right-6 p-2 text-stone-400 hover:text-stone-600 transition-colors z-10"><X size={20} /></button>
         
         <div className="flex-1 space-y-4">
           <div 
@@ -64,9 +68,9 @@ const EditPostModal = ({ post, onClose, onSave, onDelete, isSubmitting }: EditPo
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 space-y-8 flex flex-col justify-between">
+        <form onSubmit={handleSubmit} className="flex-1 space-y-6 md:space-y-8 flex flex-col justify-between">
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-[#2D2621] tracking-tight">Edit Crumb</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-[#2D2621] tracking-tight">Edit Crumb</h2>
             
             <div className="space-y-1">
               <label className="text-[10px] uppercase font-bold tracking-widest text-[#8B5E34] opacity-60 ml-1">Trip Title</label>
@@ -86,6 +90,15 @@ const EditPostModal = ({ post, onClose, onSave, onDelete, isSubmitting }: EditPo
                 onChange={e => setFormData({...formData, location: e.target.value})}
                 variant="modal"
                 required
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase font-bold tracking-widest text-[#8B5E34] opacity-60 ml-1">Hashtags</label>
+              <Input 
+                type="text" 
+                value={formData.hashtags}
+                onChange={e => setFormData({...formData, hashtags: e.target.value})}
+                variant="modal"
               />
             </div>
             <div className="space-y-1">

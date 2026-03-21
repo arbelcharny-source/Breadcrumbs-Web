@@ -125,15 +125,15 @@ export const validatePostUpdate = (req: Request, res: Response, next: NextFuncti
 };
 
 export const validateCommentCreation = (req: Request, res: Response, next: NextFunction): void => {
-  const { content, postId, ownerId } = req.body;
+  const { content, postId } = req.body;
 
-  if (!content || !postId || !ownerId) {
-    sendValidationError(res, 'Content, postId, and ownerId are required');
+  if (!content || !postId) {
+    sendValidationError(res, 'Content and postId are required');
     return;
   }
 
-  if (typeof content !== 'string' || typeof postId !== 'string' || typeof ownerId !== 'string') {
-    sendValidationError(res, 'Content, postId, and ownerId must be strings');
+  if (typeof content !== 'string' || typeof postId !== 'string') {
+    sendValidationError(res, 'Content and postId must be strings');
     return;
   }
 
@@ -144,11 +144,6 @@ export const validateCommentCreation = (req: Request, res: Response, next: NextF
 
   if (!isValidObjectId(postId)) {
     sendValidationError(res, 'Invalid postId format');
-    return;
-  }
-
-  if (!isValidObjectId(ownerId)) {
-    sendValidationError(res, 'Invalid ownerId format');
     return;
   }
 

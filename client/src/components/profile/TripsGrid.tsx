@@ -25,7 +25,7 @@ const TripsGrid = ({ trips, user, lastPostElementRef, onEditPost, onLike, onComm
             <h3 className="text-base font-bold text-[#4A3728] uppercase tracking-[0.15em]">{trip.title}</h3>
             <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{trip.date}</span>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-5">
             {trip.crumbs.map((crumb, crumbIdx) => {
               const isLastElement = tripIdx === trips.length - 1 && crumbIdx === trip.crumbs.length - 1;
               return (
@@ -50,10 +50,10 @@ const TripsGrid = ({ trips, user, lastPostElementRef, onEditPost, onLike, onComm
                     <div className="flex gap-4">
                       <button 
                         onClick={(e) => { e.stopPropagation(); onLike(crumb); }}
-                        className="flex items-center gap-1.5 hover:scale-110 transition-transform"
+                        className={`flex items-center gap-1.5 hover:scale-110 transition-transform ${user && crumb.likes?.includes(user._id) ? 'text-red-500' : 'text-white'}`}
                       >
-                        <Heart size={16} fill="white" /> 
-                        <span className="text-xs font-bold">{crumb.likesCount}</span>
+                        <Heart size={16} fill={user && crumb.likes?.includes(user._id) ? "currentColor" : "transparent"} className={user && crumb.likes?.includes(user._id) ? "" : "stroke-white"} /> 
+                        <span className="text-xs font-bold">{crumb.likes ? crumb.likes.length : crumb.likesCount}</span>
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); onComment(crumb); }}
