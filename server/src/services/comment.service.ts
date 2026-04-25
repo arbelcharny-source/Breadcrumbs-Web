@@ -34,7 +34,7 @@ export class CommentService {
       const skip = (page - 1) * limit;
 
       const [comments, total] = await Promise.all([
-        Comment.find({}).skip(skip).limit(limit).sort({ createdAt: -1 }),
+        Comment.find({}).populate('ownerId', 'username profileUrl').skip(skip).limit(limit).sort({ createdAt: -1 }),
         Comment.countDocuments({})
       ]);
 
@@ -49,12 +49,12 @@ export class CommentService {
       };
     }
 
-    const comments = await Comment.find({}).sort({ createdAt: -1 });
+    const comments = await Comment.find({}).populate('ownerId', 'username profileUrl').sort({ createdAt: -1 });
     return comments;
   }
 
   async getCommentById(commentId: string): Promise<IComment> {
-    const comment = await Comment.findById(commentId);
+    const comment = await Comment.findById(commentId).populate('ownerId', 'username profileUrl');
 
     if (!comment) {
       throw new AppError(`Comment with id ${commentId} not found`, 404);
@@ -70,7 +70,7 @@ export class CommentService {
       throw new AppError(`Post with id ${postId} not found`, 404);
     }
 
-    const comments = await Comment.find({ postId }).sort({ createdAt: -1 });
+    const comments = await Comment.find({ postId }).populate('ownerId', 'username profileUrl').sort({ createdAt: -1 });
     return comments;
   }
 

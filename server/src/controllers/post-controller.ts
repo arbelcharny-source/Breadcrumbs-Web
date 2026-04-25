@@ -79,7 +79,9 @@ export const updatePost = asyncHandler(async (req: Request, res: Response): Prom
   const userId = req.user?.userId;
 
   const post = await postService.getPostById(id);
-  if (post.ownerId.toString() !== userId) {
+  const postOwnerId = (post.ownerId as any)._id?.toString() || post.ownerId.toString();
+  
+  if (postOwnerId !== userId) {
     throw new AppError('You do not have permission to modify this post.', 401);
   }
 
@@ -88,7 +90,7 @@ export const updatePost = asyncHandler(async (req: Request, res: Response): Prom
   if (title !== undefined) updates.title = title;
   if (content !== undefined) updates.content = content;
   if (location !== undefined) updates.location = location;
-  if (hashtags !== undefined) {
+  if (hashtags !== undefined && typeof hashtags === 'string') {
       updates.hashtags = hashtags.split(',').map((tag: string) => tag.trim()).filter((t: string) => t);
   }
 
