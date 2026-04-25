@@ -213,7 +213,7 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-[#F7F3F0] pb-20">
-      <div className="max-w-[1400px] mx-auto pt-8 px-10">
+      <div className="max-w-[1400px] mx-auto pt-6 px-4 md:pt-8 md:px-10">
         
         <ProfileHeader 
           user={user} 

@@ -32,6 +32,8 @@ export interface PostResponse {
     content: string;
     imageAttachmentUrl?: string;
     location: string;
+    hashtags?: string[];
+    likes?: string[];
     likesCount: number;
     commentsCount: number;
     createdAt: string;
@@ -168,7 +170,17 @@ export const createPost = async (formData: FormData) => {
 };
 
 export const toggleLike = async (id: string) => {
-    const response = await apiClient.post<{ success: boolean; data: PostResponse }>(`/posts/like/${id}`);
+    const token = localStorage.getItem("token");
+    const response = await apiClient.post<{ success: boolean; data: PostResponse }>(`/posts/like/${id}`, {}, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    return response.data;
+};
+
+export const smartSearch = async (query: string) => {
+    const response = await apiClient.post<{ success: boolean; data: { parsedQuery: any; posts: PostResponse[] } }>("/agent/search", { query });
     return response.data;
 };
 

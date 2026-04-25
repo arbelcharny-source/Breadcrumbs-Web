@@ -15,7 +15,8 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    location: ''
+    location: '',
+    hashtags: ''
   });
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -42,6 +43,9 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
     fd.append('content', formData.content);
     fd.append('location', formData.location);
     fd.append('ownerId', user._id);
+    if (formData.hashtags.trim()) {
+      fd.append('hashtags', formData.hashtags);
+    }
     if (file) {
       fd.append('image', file);
     }
@@ -49,7 +53,7 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
     try {
       const response = await createPost(fd);
       if (response.success) {
-        setFormData({ title: '', content: '', location: '' });
+        setFormData({ title: '', content: '', location: '', hashtags: '' });
         setFile(null);
         setPreview(null);
         window.dispatchEvent(new CustomEvent('post-created'));
@@ -69,11 +73,11 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/20 backdrop-blur-md">
-      <div className="bg-[#FAF9F6] w-full max-w-2xl rounded-[2.5rem] p-8 shadow-2xl relative flex flex-col md:flex-row gap-8 overflow-y-auto max-h-[90vh]">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 bg-black/20 backdrop-blur-md">
+      <div className="bg-[#FAF9F6] w-full max-w-2xl rounded-3xl md:rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative flex flex-col md:flex-row gap-6 md:gap-8 overflow-y-auto max-h-[90vh]">
         <button 
           onClick={onClose} 
-          className="absolute top-6 right-6 p-2 text-stone-400 hover:text-stone-600 transition-colors z-10"
+          className="absolute top-4 right-4 md:top-6 md:right-6 p-2 text-stone-400 hover:text-stone-600 transition-colors z-10"
         >
           <X size={24} />
         </button>
@@ -98,10 +102,10 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
           <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 space-y-8 flex flex-col justify-between">
+        <form onSubmit={handleSubmit} className="flex-1 space-y-6 md:space-y-8 flex flex-col justify-between">
           <div className="space-y-6">
             <div>
-              <h2 className="text-3xl font-bold text-[#2D2621] tracking-tighter mb-1">New Crumb</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-[#2D2621] tracking-tighter mb-1">New Crumb</h2>
               <p className="text-[#8B5E34] text-xs font-medium opacity-60">Add a moment to your journal</p>
             </div>
             
@@ -127,6 +131,17 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
                 Icon={MapPin}
                 variant="modal"
                 required
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase font-bold tracking-widest text-[#8B5E34] opacity-60 ml-1">Hashtags</label>
+              <Input 
+                type="text" 
+                placeholder="e.g. food, nature, fun (comma separated)"
+                value={formData.hashtags}
+                onChange={e => setFormData({...formData, hashtags: e.target.value})}
+                variant="modal"
               />
             </div>
 
