@@ -14,9 +14,10 @@ interface TripsGridProps {
   onEditPost: (post: PostResponse) => void;
   onLike: (post: PostResponse) => void;
   onComment: (post: PostResponse) => void;
+  onExpandPost: (post: PostResponse) => void;
 }
 
-const TripsGrid = ({ trips, user, lastPostElementRef, onEditPost, onLike, onComment }: TripsGridProps) => {
+const TripsGrid = ({ trips, user, lastPostElementRef, onEditPost, onLike, onComment, onExpandPost }: TripsGridProps) => {
   return (
     <>
       {trips.map((trip, tripIdx) => (
@@ -32,10 +33,11 @@ const TripsGrid = ({ trips, user, lastPostElementRef, onEditPost, onLike, onComm
                 <div 
                   key={crumb._id} 
                   ref={isLastElement ? lastPostElementRef : null}
+                  onClick={() => onExpandPost(crumb)}
                   className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer shadow-sm bg-stone-200"
                 >
                   <img src={resolveImageUrl(crumb.imageAttachmentUrl, 'post')} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-[#2D2621]/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center gap-2 text-white p-2">
+                  <div className="absolute inset-0 bg-[#2D2621]/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center gap-2 text-white p-2 text-center">
                     {user?._id === crumb.ownerId && (
                       <button 
                         onClick={(e) => {
@@ -63,8 +65,8 @@ const TripsGrid = ({ trips, user, lastPostElementRef, onEditPost, onLike, onComm
                         <span className="text-xs font-bold">{crumb.commentsCount}</span>
                       </button>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 opacity-90">
-                      <MapPin size={10} className="text-[#D2B48C]" /> {crumb.location}
+                    <span className="text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 opacity-90 truncate max-w-full px-2">
+                      <MapPin size={10} className="text-[#D2B48C] flex-shrink-0" /> {crumb.location}
                     </span>
                   </div>
                 </div>
