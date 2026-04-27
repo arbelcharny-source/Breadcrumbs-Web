@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, MapPin, Heart, MessageCircle, Loader2, Send, Edit3, Trash2 } from 'lucide-react';
-import apiClient, { type PostResponse, type UserResponse, resolveImageUrl, toggleLike, addComment, deletePost, updatePost } from '../services/user-service';
+import apiClient, { type PostResponse, resolveImageUrl, toggleLike, addComment, deletePost, updatePost } from '../services/user-service';
 import { useUser } from '../context/UserContext';
 import EditCrumbModal from './EditCrumbModal';
 

@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import AddPostModal from './AddPostModal';
 
 const FloatingAddButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);

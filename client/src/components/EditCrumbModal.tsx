@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { X, Camera, MapPin, Loader2, Trash2 } from 'lucide-react';
 import { type PostResponse, resolveImageUrl } from '../services/user-service';
-import { useUser } from '../context/UserContext';
 import Input from './common/Input';
 
 interface EditCrumbModalProps {
@@ -13,7 +12,6 @@ interface EditCrumbModalProps {
 }
 
 const EditCrumbModal = ({ post, onClose, onSave, onDelete, isSubmitting }: EditCrumbModalProps) => {
-  const { logout } = useUser();
   const [formData, setFormData] = useState({
     title: post.title,
     content: post.content,

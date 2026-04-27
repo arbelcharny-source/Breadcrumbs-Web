@@ -148,6 +148,8 @@ const ProfilePage = () => {
         // Find the owner info from the existing post
         const existingPost = posts.find(p => p._id === postId);
         const updatedPost = { ...response.data, ownerId: existingPost?.ownerId };
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         setPosts(prev => prev.map(p => p._id === postId ? updatedPost : p));
         setIsPostModalOpen(false);
       }

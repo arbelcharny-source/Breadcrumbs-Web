@@ -261,7 +261,7 @@ export class PostService {
     
     return {
       ...populatedPost,
-      likesCount: populatedPost.likes ? populatedPost.likes.length : 0,
+      likesCount: populatedPost?.likes ? populatedPost.likes.length : 0,
       commentsCount
     };
   }
