@@ -23,6 +23,7 @@ const UserActions = () => {
           src={resolveImageUrl(user?.profileUrl, 'profile')} 
           alt="Profile" 
           className="w-7 h-7 rounded-full object-cover shadow-sm" 
+          referrerPolicy="no-referrer"
         />
       </button>
       <button onClick={handleLogout} className="p-2 text-[#8B5E34] hover:text-red-600 transition-colors">

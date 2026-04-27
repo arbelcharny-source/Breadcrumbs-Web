@@ -8,8 +8,6 @@ const FloatingAddButton = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  if (location.pathname === '/messages') return null;
-
   const handleOpen = () => setIsOpen(true);
   const handleClose = () => setIsOpen(false);
   const handleSuccess = () => {

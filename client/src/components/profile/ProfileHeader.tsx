@@ -16,6 +16,7 @@ const ProfileHeader = ({ user, profileUser, tripsCount, postsCount, onOpenSettin
         src={resolveImageUrl(profileUser?.profileUrl, 'profile')} 
         alt="Profile" 
         className="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover border-2 border-white shadow-md bg-stone-200" 
+        referrerPolicy="no-referrer"
       />
       <div className="flex-1 flex flex-col items-center md:items-start">
         <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 mb-1">
