@@ -10,10 +10,11 @@ app.use(express.static(path.join(__dirname, 'dist')));
 app.get('*splat', (req, res) => res.sendFile(path.join(__dirname, 'dist/index.html')));
 
 const options = {
-    key: fs.readFileSync('/home/node20/app/Breadcrumbs-Web/client-key.pem'),
-    cert: fs.readFileSync('/home/node20/app/Breadcrumbs-Web/client-cert.pem')
+    key: fs.readFileSync(process.env.SSL_KEY_PATH),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH)
 };
 
-https.createServer(options, app).listen(443, () => {
-    console.log('HTTPS Server running on port 443');
+const PORT = process.env.APP_PORT || 443;
+https.createServer(options, app).listen(PORT, () => {
+    console.log(`HTTPS Server running on port ${PORT}`);
 });
