@@ -15,45 +15,33 @@ interface UpdateCommentBody {
 
 export const createComment = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const ownerId = req.user?.userId;
-
   if (!ownerId) {
     throw new AppError('Unauthorized', 401);
   }
-
-  // Set ownerId in body for validation middleware
   req.body.ownerId = ownerId;
-
   const { content, postId } = req.body as CreateCommentBody;
-
   const comment = await commentService.createComment(content, postId, ownerId);
-
   sendCreated(res, comment);
 });
 
 export const getAllComments = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const page = parseInt(req.query.page as string);
   const limit = parseInt(req.query.limit as string);
-
   const comments = (page && limit)
     ? await commentService.getAllComments({ page, limit })
     : await commentService.getAllComments();
-
   sendSuccess(res, comments);
 });
 
 export const getCommentByID = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const id = req.params._id as string;
-
   const comment = await commentService.getCommentById(id);
-
   sendSuccess(res, comment);
 });
 
 export const getCommentsByPost = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const postId = req.params.postId as string;
-
   const comments = await commentService.getCommentsByPost(postId);
-
   sendSuccess(res, comments);
 });
 
@@ -62,14 +50,14 @@ export const updateComment = asyncHandler(async (req: Request, res: Response): P
   const userId = req.user?.userId;
 
   const comment = await commentService.getCommentById(id);
-  if (comment.ownerId.toString() !== userId) {
+  const commentOwnerId = (comment.ownerId as any)._id?.toString() || comment.ownerId.toString();
+
+  if (commentOwnerId !== userId) {
     throw new AppError('You do not have permission to modify this comment.', 401);
   }
 
   const { content } = req.body as UpdateCommentBody;
-
   const updatedComment = await commentService.updateComment(id, content);
-
   sendSuccess(res, updatedComment);
 });
 
@@ -78,11 +66,12 @@ export const deleteComment = asyncHandler(async (req: Request, res: Response): P
   const userId = req.user?.userId;
 
   const comment = await commentService.getCommentById(id);
-  if (comment.ownerId.toString() !== userId) {
+  const commentOwnerId = (comment.ownerId as any)._id?.toString() || comment.ownerId.toString();
+
+  if (commentOwnerId !== userId) {
     throw new AppError('You do not have permission to modify this comment.', 401);
   }
 
   await commentService.deleteComment(id);
-
   sendSuccess(res, { message: 'Comment deleted successfully' });
 });
