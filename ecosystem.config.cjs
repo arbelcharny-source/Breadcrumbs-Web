@@ -13,7 +13,7 @@ module.exports = {
     {
       name: "breadcrumbs-frontend",
       script: "npm",
-      args: "run dev", // Usually you'd serve built files, but for 'College server' simple dev/preview is often used
+      args: "run dev",
       cwd: "./client",
       env: {
         NODE_ENV: "production",
