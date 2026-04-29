@@ -5,8 +5,8 @@ import { getUserProfile, updateUser, updatePost, deletePost, toggleLike, type Us
 import ProfileHeader from '../components/profile/ProfileHeader';
 import TripsGrid, { type GroupedTrip } from '../components/profile/TripsGrid';
 import EditProfileModal from '../components/profile/EditProfileModal';
-import EditPostModal from '../components/profile/EditPostModal';
-import CommentsModal from '../components/comments/CommentsModal';
+import EditCrumbModal from '../components/EditCrumbModal';
+import ExpandCrumbModal from '../components/ExpandCrumbModal';
 
 const ProfilePage = () => {
   const { user, updateUser: updateContextUser, logout } = useUser();
@@ -19,7 +19,7 @@ const ProfilePage = () => {
   
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
-  const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
+  const [isExpandModalOpen, setIsExpandModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<PostResponse | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -145,8 +145,12 @@ const ProfilePage = () => {
     try {
       const response = await updatePost(postId, formData);
       if (response.success) {
-        setPage(1);
-        await fetchProfile(1, false);
+        // Find the owner info from the existing post
+        const existingPost = posts.find(p => p._id === postId);
+        const updatedPost = { ...response.data, ownerId: existingPost?.ownerId };
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        setPosts(prev => prev.map(p => p._id === postId ? updatedPost : p));
         setIsPostModalOpen(false);
       }
     } catch (error: any) {
@@ -158,13 +162,14 @@ const ProfilePage = () => {
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!window.confirm("Are you sure you want to delete this crumb?")) return;
+    // confirmation handled in modal
     setIsSubmitting(true);
     try {
       const response = await deletePost(postId);
       if (response.success) {
         setPosts(prev => prev.filter(p => p._id !== postId));
         setIsPostModalOpen(false);
+        setIsExpandModalOpen(false);
       }
     } catch (error: any) {
       console.error("Error deleting post:", error);
@@ -186,21 +191,17 @@ const ProfilePage = () => {
     }
   };
 
-  const handleCommentClick = (post: PostResponse) => {
+  const handleExpandPost = (post: PostResponse) => {
     setSelectedPost(post);
-    setIsCommentsModalOpen(true);
+    setIsExpandModalOpen(true);
   };
 
-  const handleCommentAdded = async () => {
-    if (!selectedPost) return;
-    try {
-      // Refresh only the specific post to update comment count
-      // Or just refresh the whole list for simplicity
-      setPage(1);
-      await fetchProfile(1, false);
-    } catch (error) {
-      console.error("Error refreshing comments count", error);
-    }
+  const handlePostUpdate = (updatedPost: PostResponse) => {
+    setPosts(prev => prev.map(p => p._id === updatedPost._id ? updatedPost : p));
+  };
+
+  const handlePostDelete = (postId: string) => {
+    setPosts(prev => prev.filter(p => p._id !== postId));
   };
 
   if (loading && page === 1) {
@@ -213,7 +214,7 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-[#F7F3F0] pb-20">
-      <div className="max-w-[1400px] mx-auto pt-8 px-10">
+      <div className="max-w-[1400px] mx-auto pt-6 px-4 md:pt-8 md:px-10">
         
         <ProfileHeader 
           user={user} 
@@ -233,7 +234,8 @@ const ProfilePage = () => {
               setIsPostModalOpen(true);
             }} 
             onLike={handleLike}
-            onComment={handleCommentClick}
+            onComment={handleExpandPost}
+            onExpandPost={handleExpandPost}
           />
         ) : !loading && (
           <div className="text-center py-20">
@@ -258,7 +260,7 @@ const ProfilePage = () => {
       )}
 
       {isPostModalOpen && selectedPost && (
-        <EditPostModal 
+        <EditCrumbModal 
           post={selectedPost} 
           onClose={() => setIsPostModalOpen(false)} 
           onSave={(fd) => handleUpdatePost(selectedPost._id, fd)}
@@ -267,11 +269,12 @@ const ProfilePage = () => {
         />
       )}
 
-      {isCommentsModalOpen && selectedPost && (
-        <CommentsModal 
-          postId={selectedPost._id}
-          onClose={() => setIsCommentsModalOpen(false)}
-          onCommentAdded={handleCommentAdded}
+      {isExpandModalOpen && selectedPost && (
+        <ExpandCrumbModal 
+          post={selectedPost}
+          onClose={() => setIsExpandModalOpen(false)}
+          onPostUpdate={handlePostUpdate}
+          onPostDelete={handlePostDelete}
         />
       )}
     </div>

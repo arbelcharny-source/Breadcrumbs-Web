@@ -38,7 +38,8 @@ export class PostService {
     content: string,
     ownerId: string,
     imageAttachmentUrl?: string,
-    location?: string
+    location?: string,
+    hashtags?: string[]
   ): Promise<IPost> {
     const userExists = await userService.checkUserExists(ownerId);
 
@@ -51,39 +52,82 @@ export class PostService {
       content,
       ownerId,
       imageAttachmentUrl,
-      location
+      location,
+      hashtags: hashtags || []
     });
 
     return post;
   }
 
-  async getAllPosts(params?: PaginationParams): Promise<PaginatedResult<IPost> | IPost[]> {
+  async getAllPosts(params?: PaginationParams): Promise<PaginatedResult<PostWithStats> | PostWithStats[]> {
+    let posts;
+    let total = 0;
+
     if (params) {
       const { page, limit } = params;
       const skip = (page - 1) * limit;
 
-      const [posts, total] = await Promise.all([
-        Post.find({}).skip(skip).limit(limit).sort({ createdAt: -1 }),
+      [posts, total] = await Promise.all([
+        Post.find({}).populate('ownerId', 'username profileUrl fullName').skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
         Post.countDocuments({})
       ]);
+    } else {
+      posts = await Post.find({}).populate('ownerId', 'username profileUrl fullName').sort({ createdAt: -1 }).lean();
+    }
 
+    const postsWithStats = await Promise.all(posts.map(async (post: any) => {
+      const commentsCount = await Comment.countDocuments({ postId: post._id });
       return {
-        data: posts,
+        ...post,
+        likesCount: post.likes ? post.likes.length : 0,
+        commentsCount
+      };
+    }));
+
+    if (params) {
+      return {
+        data: postsWithStats as PostWithStats[],
         pagination: {
-          page,
-          limit,
+          page: params.page,
+          limit: params.limit,
           total,
-          totalPages: Math.ceil(total / limit)
+          totalPages: Math.ceil(total / params.limit)
         }
       };
     }
 
-    const posts = await Post.find({}).sort({ createdAt: -1 });
-    return posts;
+    return postsWithStats as PostWithStats[];
+  }
+
+  async searchPosts(searchTerms: string[]): Promise<PostWithStats[]> {
+    const conditions: any[] = [];
+
+    if (searchTerms && searchTerms.length > 0) {
+      const regexes = searchTerms.map(term => new RegExp(term, 'i'));
+
+      conditions.push({ title: { $in: regexes } });
+      conditions.push({ content: { $in: regexes } });
+      conditions.push({ location: { $in: regexes } });
+      conditions.push({ hashtags: { $in: regexes } });
+    }
+
+    const query = conditions.length > 0 ? { $or: conditions } : {};
+    const posts = await Post.find(query).populate('ownerId', 'username profileUrl fullName').sort({ createdAt: -1 }).lean();
+
+    const postsWithStats = await Promise.all(posts.map(async (post: any) => {
+      const commentsCount = await Comment.countDocuments({ postId: post._id });
+      return {
+        ...post,
+        likesCount: post.likes ? post.likes.length : 0,
+        commentsCount
+      };
+    }));
+
+    return postsWithStats as PostWithStats[];
   }
 
   async getPostById(postId: string): Promise<IPost> {
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId).populate('ownerId', 'username profileUrl fullName');
 
     if (!post) {
       throw new AppError(`Post with id ${postId} not found`, 404);
@@ -99,7 +143,7 @@ export class PostService {
       throw new AppError(`User with id ${ownerId} not found`, 404);
     }
 
-    const posts = await Post.find({ ownerId }).sort({ createdAt: -1 });
+    const posts = await Post.find({ ownerId }).populate('ownerId', 'username profileUrl fullName').sort({ createdAt: -1 });
     return posts;
   }
 
@@ -116,15 +160,15 @@ export class PostService {
     if (params) {
       const { page, limit } = params;
       const skip = (page - 1) * limit;
-      
+
       [posts, total] = await Promise.all([
-        Post.find({ ownerId }).skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
+        Post.find({ ownerId }).populate('ownerId', 'username profileUrl fullName').skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
         Post.countDocuments({ ownerId })
       ]);
     } else {
-      posts = await Post.find({ ownerId }).sort({ createdAt: -1 }).lean();
+      posts = await Post.find({ ownerId }).populate('ownerId', 'username profileUrl fullName').sort({ createdAt: -1 }).lean();
     }
-    
+
     const postsWithStats = await Promise.all(posts.map(async (post: any) => {
       const commentsCount = await Comment.countDocuments({ postId: post._id });
       return {
@@ -150,7 +194,7 @@ export class PostService {
     return postsWithStats as PostWithStats[];
   }
 
-  async updatePost(postId: string, updates: { content?: string; location?: string; title?: string; imageAttachmentUrl?: string }): Promise<IPost> {
+  async updatePost(postId: string, updates: { content?: string; location?: string; title?: string; imageAttachmentUrl?: string, hashtags?: string[] }): Promise<IPost> {
     const post = await Post.findById(postId);
     if (!post) {
       throw new AppError(`Post with id ${postId} not found`, 404);
@@ -196,20 +240,30 @@ export class PostService {
     return !!post;
   }
 
-  async toggleLike(postId: string, userId: string): Promise<IPost> {
+  async toggleLike(postId: string, userId: string): Promise<any> {
     const post = await Post.findById(postId);
     if (!post) {
       throw new AppError(`Post with id ${postId} not found`, 404);
     }
 
-    const likeIndex = post.likes.indexOf(userId as any);
+    const likeIndex = post.likes.findIndex(id => id.toString() === userId);
     if (likeIndex === -1) {
       post.likes.push(userId as any);
     } else {
       post.likes.splice(likeIndex, 1);
     }
 
-    return await post.save();
+    await post.save();
+    
+    // Return populated post with stats
+    const populatedPost = await Post.findById(postId).populate('ownerId', 'username profileUrl fullName').lean();
+    const commentsCount = await Comment.countDocuments({ postId });
+    
+    return {
+      ...populatedPost,
+      likesCount: populatedPost?.likes ? populatedPost.likes.length : 0,
+      commentsCount
+    };
   }
 }
 

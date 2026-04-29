@@ -32,10 +32,17 @@ export interface PostResponse {
     content: string;
     imageAttachmentUrl?: string;
     location: string;
+    hashtags?: string[];
+    likes?: string[];
     likesCount: number;
     commentsCount: number;
     createdAt: string;
-    ownerId: string;
+    ownerId: {
+        _id: string;
+        username: string;
+        fullName?: string;
+        profileUrl?: string;
+    };
 }
 
 interface ProfileResponse {
@@ -52,15 +59,33 @@ interface ProfileResponse {
     };
 }
 
-export const resolveImageUrl = (path: string | undefined | null, fallbackType: 'profile' | 'post' = 'post'): string => {
-    if (!path) {
-        return fallbackType === 'profile' 
-            ? 'https://placehold.co/400x400?text=User' 
-            : 'https://placehold.co/800x600?text=Breadcrumb';
-    }
-    if (path.startsWith('http')) return path;
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-    return `${API_URL}${path}`;
+export const resolveImageUrl = (url?: string | null, type: 'profile' | 'post' = 'post') => {
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+  // 1. Fallback for empty/null/undefined
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    return type === 'profile' 
+      ? 'https://placehold.co/400x400/FAF9F6/2D2621?text=User' 
+      : 'https://placehold.co/800x600/FAF9F6/2D2621?text=Breadcrumb';
+  }
+
+  let finalUrl = url;
+
+  // 2. Handle Google/External URLs (starting with http)
+  if (url.startsWith('http')) {
+    finalUrl = url;
+  } 
+  // 3. Handle local paths
+  else {
+    // Ensure there is exactly one slash between baseUrl and the path
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    finalUrl = `${baseUrl}${cleanPath}`;
+  }
+
+  // Temporary debug log - we will remove this before production
+  // console.log(`[Image Debug] Input: ${url} | Output: ${finalUrl}`);
+  
+  return finalUrl;
 };
 
 apiClient.interceptors.request.use((config) => {
@@ -116,11 +141,9 @@ export const updateUserBio = async (bio: string) => {
 };
 
 export const updateUser = async (id: string, formData: FormData) => {
-    const token = localStorage.getItem("token");
     const response = await apiClient.put<{ success: boolean; data: UserResponse }>(`/users/${id}`, formData, {
         headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'multipart/form-data'
         },
     });
     return response.data;
@@ -138,37 +161,37 @@ export const updatePost = async (id: string, formData: FormData) => {
 };
 
 export const deletePost = async (id: string) => {
-    const token = localStorage.getItem("token");
-    const response = await apiClient.delete<{ success: boolean; data: { message: string } }>(`/posts/${id}`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
+    const response = await apiClient.delete<{ success: boolean; data: { message: string } }>(`/posts/${id}`);
     return response.data;
 };
 
 export const createPost = async (formData: FormData) => {
-    const token = localStorage.getItem("token");
-    const headers: any = {
-        'Content-Type': 'multipart/form-data',
-    };
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    console.log("Create Post FormData:");
-    formData.forEach((value, key) => {
-        console.log(`${key}:`, value);
-    });
-
     const response = await apiClient.post<{ success: boolean; data: PostResponse }>("/posts", formData, {
-        headers,
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        },
     });
     return response.data;
 };
 
 export const toggleLike = async (id: string) => {
-    const response = await apiClient.post<{ success: boolean; data: PostResponse }>(`/posts/like/${id}`);
+    const token = localStorage.getItem("token");
+    const response = await apiClient.post<{ success: boolean; data: PostResponse }>(`/posts/like/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const addComment = async (postId: string, content: string) => {
+    const token = localStorage.getItem("token");
+    const response = await apiClient.post<{ success: boolean; data: any }>(`/comments`, { postId, content }, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+};
+
+export const smartSearch = async (query: string) => {
+    const response = await apiClient.post<{ success: boolean; data: { parsedQuery: any; posts: PostResponse[] } }>("/agent/search", { query });
     return response.data;
 };
 

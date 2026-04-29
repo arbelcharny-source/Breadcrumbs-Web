@@ -6,6 +6,7 @@ export interface IPost extends Document {
   content: string;
   imageAttachmentUrl?: string;
   location: string;
+  hashtags: string[];
   likes: Types.ObjectId[];
   createdAt: Date;
 }
@@ -31,6 +32,10 @@ const postSchema = new Schema<IPost>({
   location: {
     type: String,
     default: "Unknown Location",
+  },
+  hashtags: {
+    type: [String],
+    default: [],
   },
   likes: {
     type: [Schema.Types.ObjectId],

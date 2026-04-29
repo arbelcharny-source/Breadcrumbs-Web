@@ -42,9 +42,11 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ postId, onClose, onCommen
     if (!newComment.trim() || !user) return;
 
     try {
+      const token = localStorage.getItem("token");
       await apiClient.post(
         `/comments`,
-        { content: newComment, postId }
+        { content: newComment, postId },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setNewComment("");
       fetchComments();
@@ -56,7 +58,10 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ postId, onClose, onCommen
 
   const handleDelete = async (commentId: string) => {
     try {
-      await apiClient.delete(`/comments/${commentId}`);
+      const token = localStorage.getItem("token");
+      await apiClient.delete(`/comments/${commentId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       fetchComments();
       if (onCommentAdded) onCommentAdded();
     } catch (err) {
@@ -67,12 +72,12 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ postId, onClose, onCommen
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-[#2D2621]">Comments</h2>
+        <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center">
+          <h2 className="text-xl md:text-2xl font-bold text-[#2D2621]">Comments</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6">
           {loading ? (
             <div className="text-center text-gray-400">Loading comments...</div>
           ) : comments.length === 0 ? (
@@ -102,7 +107,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ postId, onClose, onCommen
           )}
         </div>
 
-        <div className="p-6 border-t border-gray-100 bg-gray-50">
+        <div className="p-4 md:p-6 border-t border-gray-100 bg-gray-50">
           <form onSubmit={handleSubmit} className="flex space-x-3">
             <input
               type="text"

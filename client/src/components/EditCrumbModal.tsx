@@ -1,24 +1,24 @@
 import { useState, useRef } from 'react';
-import { X, Camera, MapPin, Loader2 } from 'lucide-react';
-import { createPost } from '../../services/user-service';
-import { useUser } from '../../context/UserContext';
-import Input from '../common/Input';
+import { X, Camera, MapPin, Loader2, Trash2 } from 'lucide-react';
+import { type PostResponse, resolveImageUrl } from '../services/user-service';
+import Input from './common/Input';
 
-interface AddPostModalProps {
+interface EditCrumbModalProps {
+  post: PostResponse;
   onClose: () => void;
-  onSuccess: () => void;
+  onSave: (fd: FormData) => void;
+  onDelete: () => void;
+  isSubmitting: boolean;
 }
 
-const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
-  const { user, logout } = useUser();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const EditCrumbModal = ({ post, onClose, onSave, onDelete, isSubmitting }: EditCrumbModalProps) => {
   const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    location: '',
-    hashtags: ''
+    title: post.title,
+    content: post.content,
+    location: post.location,
+    hashtags: post.hashtags?.join(', ') || ''
   });
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(resolveImageUrl(post.imageAttachmentUrl));
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,17 +32,10 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?._id) {
-      alert("You must be logged in to drop a crumb.");
-      return;
-    }
-
-    setIsSubmitting(true);
     const fd = new FormData();
     fd.append('title', formData.title);
     fd.append('content', formData.content);
     fd.append('location', formData.location);
-    fd.append('ownerId', user._id);
     if (formData.hashtags.trim()) {
       fd.append('hashtags', formData.hashtags);
     }
@@ -51,29 +44,15 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
     }
 
     try {
-      const response = await createPost(fd);
-      if (response.success) {
-        setFormData({ title: '', content: '', location: '', hashtags: '' });
-        setFile(null);
-        setPreview(null);
-        window.dispatchEvent(new CustomEvent('post-created'));
-        onSuccess();
-      }
+      onSave(fd);
     } catch (error: any) {
-      console.error("Error creating post:", error);
-      if (error.response?.status === 401) {
-        alert("Session expired or unauthorized. Logging out...");
-        logout();
-      } else {
-        alert("Failed to create crumb. Please try again.");
-      }
-    } finally {
-      setIsSubmitting(false);
+      console.error("Update failed:", error.response?.data || error.message);
+      alert("Failed to update crumb. Please try again.");
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-6 bg-black/20 backdrop-blur-md">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 md:p-6 bg-black/20 backdrop-blur-md">
       <div className="bg-[#FAF9F6] w-full max-w-2xl rounded-3xl md:rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative flex flex-col md:flex-row gap-6 md:gap-8 overflow-y-auto max-h-[90vh]">
         <button 
           onClick={onClose} 
@@ -100,13 +79,21 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
             </div>
           </div>
           <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+          
+          <button 
+            type="button"
+            onClick={onDelete}
+            className="flex items-center justify-center gap-2 w-full text-[10px] uppercase font-bold tracking-widest text-[#8B5E34] hover:text-red-500 transition-colors py-2"
+          >
+            <Trash2 size={14} /> Delete Crumb
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 space-y-6 md:space-y-8 flex flex-col justify-between">
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-[#2D2621] tracking-tighter mb-1">New Crumb</h2>
-              <p className="text-[#8B5E34] text-xs font-medium opacity-60">Add a moment to your journal</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-[#2D2621] tracking-tighter mb-1">Edit Crumb</h2>
+              <p className="text-[#8B5E34] text-xs font-medium opacity-60">Update your journey memory</p>
             </div>
             
             <div className="space-y-1">
@@ -162,7 +149,7 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
             disabled={isSubmitting}
             className="w-full bg-[#2D2621] text-white py-4 rounded-full font-bold shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Drop Crumb'}
+            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Update Crumb'}
           </button>
         </form>
       </div>
@@ -170,4 +157,4 @@ const AddPostModal = ({ onClose, onSuccess }: AddPostModalProps) => {
   );
 };
 
-export default AddPostModal;
+export default EditCrumbModal;

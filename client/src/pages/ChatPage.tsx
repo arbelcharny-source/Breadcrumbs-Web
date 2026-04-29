@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
+import { ChevronLeft } from 'lucide-react';
 import { useUser } from "../context/UserContext";
 import socketService from "../services/socketService";
 import apiClient, { resolveImageUrl } from "../services/user-service";
@@ -110,11 +111,12 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto h-[80vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex mt-10">
+    <div className="w-full px-0 md:px-8 lg:px-12 h-[calc(100vh-68px)] md:h-[calc(100vh-140px)] mt-0 md:mt-10">
+      <div className="max-w-6xl mx-auto h-full bg-white md:rounded-3xl shadow-none md:shadow-2xl overflow-hidden flex flex-col md:flex-row">
       {/* Sidebar */}
-      <div className="w-1/3 border-r border-gray-100 flex flex-col bg-gray-50">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-[#2D2621]">Messages</h2>
+      <div className={`w-full md:w-1/3 border-r border-gray-100 flex-col bg-gray-50 ${selectedPartner ? 'hidden md:flex' : 'flex'}`}>
+        <div className="p-4 md:p-6 border-b border-gray-200">
+          <h2 className="text-xl md:text-2xl font-bold text-[#2D2621]">Messages</h2>
         </div>
         <div className="flex-1 overflow-y-auto">
           {partners.length === 0 && !selectedPartner ? (
@@ -160,19 +162,25 @@ const ChatPage: React.FC = () => {
       </div>
 
       {/* Chat Window */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className={`flex-1 flex flex-col bg-white ${!selectedPartner ? 'hidden md:flex' : 'flex'}`}>
         {selectedPartner ? (
           <>
-            <div className="p-6 border-b border-gray-100 flex items-center space-x-4 bg-white">
-              <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden shadow-inner">
+            <div className="p-4 md:p-6 border-b border-gray-100 flex items-center space-x-3 md:space-x-4 bg-white sticky top-0 z-10">
+              <button 
+                onClick={() => setSelectedPartner(null)} 
+                className="md:hidden p-1.5 -ml-2 text-stone-500 hover:text-stone-800"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden shadow-inner flex-shrink-0">
                 {selectedPartner.profileUrl && (
                   <img src={resolveImageUrl(selectedPartner.profileUrl, 'profile')} alt={selectedPartner.username} className="w-full h-full object-cover" />
                 )}
               </div>
-              <h2 className="text-xl font-bold text-[#2D2621]">{selectedPartner.username}</h2>
+              <h2 className="text-lg md:text-xl font-bold text-[#2D2621] truncate">{selectedPartner.username}</h2>
             </div>
 
-            <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#F9F7F5]">
+            <div className="flex-1 p-4 md:p-6 overflow-y-auto space-y-4 bg-[#F9F7F5]">
               {messages.map((m, i) => (
                 <div
                   key={i}
@@ -220,6 +228,7 @@ const ChatPage: React.FC = () => {
             <p className="text-xl font-light">Select a connection to start talking.</p>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
