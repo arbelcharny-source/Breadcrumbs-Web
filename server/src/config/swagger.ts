@@ -8,9 +8,9 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: "User Registration API",
       version: "1.0.0",
-      description: "API documentation for second assignment.",
+      description: "API documentation for Breadcrumbs",
       contact: {
-        name: "Arbel & Nitzan",
+        name: "Arbel, Hillel and Tamar",
       },
     },
     servers: [
@@ -18,6 +18,10 @@ const options: swaggerJsdoc.Options = {
         url: `http://localhost:${process.env.PORT || 3000}`,
         description: "Development server",
       },
+      {
+        url: "https://node20.cs.colman.ac.il",
+        description: "Production Server"
+      }
     ],
     components: {
       securitySchemes: {
